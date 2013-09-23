@@ -31,5 +31,5 @@ EXAMPLE USAGE
 
 * getting only one isochrone
 ```python 
->>> r = get_cmd.get_one_isochrones(1e7, 0.02, phot='spitzer')
+>>> r = cmd.get_one_isochrones(1e7, 0.02, phot='spitzer')
 ```
