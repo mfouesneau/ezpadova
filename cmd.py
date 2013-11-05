@@ -34,6 +34,7 @@ EXAMPLE USAGE
 
 import urllib
 import urllib2
+import zlib
 import re
 from eztables import Table
 from StringIO import StringIO
@@ -48,7 +49,7 @@ map_cmd_version = {
 
 def help_cmd_version():
     for k, v in map_cmd_version.items():
-        print 'cmd "{}":\n   {}\n'.format(k, v[1])
+        print 'cmd "{0}":\n   {1}\n'.format(k, v[1])
 
 
 #interpolation
@@ -118,7 +119,7 @@ map_models = {
 
 def help_models():
     for k, v in map_models.items():
-        print 'model "{}":\n   {}\n'.format(k, v[1])
+        print 'model "{0}":\n   {1}\n'.format(k, v[1])
 
 
 map_carbon_stars = {
@@ -129,7 +130,7 @@ map_carbon_stars = {
 
 def help_carbon_stars():
     for k, v in map_carbon_stars.items():
-        print 'model "{}":\n   {}\n'.format(k, v[1])
+        print 'model "{0}":\n   {1}\n'.format(k, v[1])
 
 #circumstellar dust
 map_circum_Mstars = {
@@ -151,10 +152,10 @@ map_circum_Cstars = {
 def help_circumdust():
     print 'M stars'
     for k, v in map_circum_Mstars.items():
-        print 'model "{}":\n   {}\n'.format(k, v[1])
+        print 'model "{0}":\n   {1}\n'.format(k, v[1])
     print 'C stars'
     for k, v in map_circum_Cstars.items():
-        print 'model "{}":\n   {}\n'.format(k, v[1])
+        print 'model "{0}":\n   {1}\n'.format(k, v[1])
 
 
 map_isoc_val = {
@@ -207,6 +208,31 @@ __def_args__ = {'binary_frac': 0.3,
                 'submit_form': 'Submit'}
 
 
+
+def file_type(filename, stream=False):
+    """ Detect potential compressed file
+    Returns the gz, bz2 or zip if a compression is detected, else None.
+    """
+    magic_dict = {
+        "\x1f\x8b\x08": "gz",
+        "\x42\x5a\x68": "bz2",
+        "\x50\x4b\x03\x04": "zip"
+        }
+    max_len = max(len(x) for x in magic_dict)
+    if not stream:
+        with open(filename) as f:
+            file_start = f.read(max_len)
+        for magic, filetype in magic_dict.items():
+            if file_start.startswith(magic):
+                return filetype
+    else:
+        for magic, filetype in magic_dict.items():
+            if filename[:len(magic)] == magic:
+                return filetype
+
+    return None
+
+
 def __get_url_args(model=None, carbon=None, interp=None, Mstars=None, Cstars=None, dust=None, phot=None):
     """ Update options in the URL query using internal shortcuts """
     d = __def_args__.copy()
@@ -231,7 +257,7 @@ def __get_url_args(model=None, carbon=None, interp=None, Mstars=None, Cstars=Non
         d['dust_source'] = map_circum_Mstars[Mstars]
 
     if phot is not None:
-        d['photsys_file'] = 'tab_mag_odfnew/tab_mag_{}.dat'.format(phot)
+        d['photsys_file'] = 'tab_mag_odfnew/tab_mag_{0}.dat'.format(phot)
 
     return d
 
@@ -239,17 +265,21 @@ def __get_url_args(model=None, carbon=None, interp=None, Mstars=None, Cstars=Non
 def __query_website(d):
     """ Communicate with the CMD website """
     webserver = 'http://stev.oapd.inaf.it'
-    print('Interrogating {}...'.format(webserver))
+    print('Interrogating {0}...'.format(webserver))
     q = urllib.urlencode(d)
-    #print('Query content: {}'.format(q))
+    #print('Query content: {0}'.format(q))
     c = urllib2.urlopen(webserver + '/cgi-bin/cmd_2.3', q).read()
     aa = re.compile('output\d+')
     fname = aa.findall(c)
     if len(fname) > 0:
-        url = '{}/~lgirardi/tmp/{}.dat'.format(webserver, fname[0])
-        print('Downloading data...{}'.format(url))
+        url = '{0}/~lgirardi/tmp/{1}.dat'.format(webserver, fname[0])
+        print('Downloading data...{0}'.format(url))
         bf = urllib2.urlopen(url)
-        return bf.read()
+        r = bf.read()
+        typ = file_type(r, stream=True)
+        if typ is not None:
+            r = zlib.decompress(bytes(r))
+        return r
     else:
         print c
         raise RuntimeError('Server Response is incorrect')
