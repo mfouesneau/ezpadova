@@ -22,7 +22,7 @@ EXAMPLE USAGE
 
 * Basic example of downloading a sequence of isochrones, plotting, saving
 ```python 
->>> r = get_cmd.get_t_isochrones(6.0, 7.0, 0.05, 0.02)
+>>> r = cmd.get_t_isochrones(6.0, 7.0, 0.05, 0.02)
 >>> import pylab as plt
 >>> plt.scatter(r['logTe'], r['logL/Lo'], c=r['log(age/yr)'], edgecolor='None')
 >>> plt.show()
@@ -31,5 +31,5 @@ EXAMPLE USAGE
 
 * getting only one isochrone
 ```python 
->>> r = get_cmd.get_one_isochrones(1e7, 0.02, phot='spitzer')
+>>> r = cmd.get_one_isochrones(1e7, 0.02, phot='spitzer')
 ```
