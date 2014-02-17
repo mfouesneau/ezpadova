@@ -278,7 +278,7 @@ def __query_website(d):
         r = bf.read()
         typ = file_type(r, stream=True)
         if typ is not None:
-            r = zlib.decompress(bytes(r))
+            r = zlib.decompress(bytes(r), 15 + 32)
         return r
     else:
         print c
