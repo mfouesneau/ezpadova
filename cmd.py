@@ -1,20 +1,20 @@
 """
-EZPADOVA -- A python package that allows you to download PADOVA isochrones directly from their website
+EZPADOVA -- A python package that allows you to download PADOVA isochrones
+directly from their website
 
 
-This small package provides a direct interface to the PADOVA/PARSEC isochrone webpage (http://stev.oapd.inaf.it/cgi-bin/cmd).
-It compiles the URL needed to query the website and retrives the data into a python variable.
+This small package provides a direct interface to the PADOVA/PARSEC isochrone
+webpage (http://stev.oapd.inaf.it/cgi-bin/cmd).  It compiles the URL needed to
+query the website and retrives the data into a python variable.
 
-:version: 0.1dev
+:version: 1.0
 :author: MF
-:requirements: eztables (github.com/mfouesneau/eztables)
 
+.. todo::
 
-TODO list
---------
-* test with parsec 1.1 (currently working with cmd2.3)
-* make a full doc
-* cleanup the mess
+    * test with parsec 1.1 (currently working with cmd2.3)
+    * make a full doc
+    * cleanup the mess
 
 
 EXAMPLE USAGE
@@ -28,16 +28,27 @@ EXAMPLE USAGE
 >>> r.write('myiso.fits')
 
 # getting only one isochrone
->>> r = get_cmd.get_one_isochrones(1e7, 0.02, phot='spitzer')
+>>> r = cmd.get_one_isochrones(1e7, 0.02, phot='spitzer')
 
 """
+from __future__ import print_function, unicode_literals, division
 
-import urllib
-import urllib2
+import sys
+
+if sys.version_info[0] > 2:
+    py3k = True
+    from urllib.parse import urlencode
+    from urllib import request
+    from urllib.request import urlopen
+    from io import StringIO, BytesIO
+else:
+    py3k = False
+    from urllib import urlencode
+    from urllib2 import urlopen
+    from StringIO import StringIO
 import zlib
 import re
-from eztables import Table
-from StringIO import StringIO
+from .simpletable import SimpleTable as Table
 
 # internal parameters
 # ---------------
@@ -49,10 +60,10 @@ map_cmd_version = {
 
 def help_cmd_version():
     for k, v in map_cmd_version.items():
-        print 'cmd "{0}":\n   {1}\n'.format(k, v[1])
+        print('cmd "{0}":\n   {1}\n'.format(k, v[1]))
 
 
-#interpolation
+# interpolation
 map_interp = {
     'default': 0,
     'improved': 1
@@ -108,8 +119,16 @@ map_phot = {"2mass_spitzer": " 2MASS + Spitzer (IRAC+MIPS)",
             "washington_ddo51": "Washington CMT1T2 + DDO51"
             }
 
-#available tracks
+
+def help_phot():
+    for k, v in map_phot.items():
+        print('phot "{0}":\n   {1}\n'.format(k, v))
+
+# available tracks
 map_models = {
+    'parsec12s': ('parsec_CAF09_v1.2S', 'PARSEC version 1.2S,  Tang et al. (2014),  Chen et al. (2014)'),
+    'parsec11': ('parsec_CAF09_v1.1', 'PARSEC version 1.1, With revised diffusion+overshooting in low-mass stars, and improvements in interpolation scheme.'),
+    'parsec10': ('parsec_CAF09_v1.0', 'PARSEC version 1.0'),
     '2010': ('gi10a',  'Marigo et al. (2008) with the Girardi et al. (2010) Case A correction for low-mass, low-metallicity AGB tracks'),
     '2010b': ('gi10b',  'Marigo et al. (2008) with the Girardi et al. (2010) Case B correction for low-mass, low-metallicity AGB tracks'),
     '2008': ('ma08',   'Marigo et al. (2008): Girardi et al. (2000) up to early-AGB + detailed TP-AGB from Marigo & Girardi (2007) (for M <= 7 Msun) + Bertelli et al. (1994) (for M > 7 Msun) + additional Z=0.0001 and Z=0.001 tracks.'),
@@ -119,7 +138,7 @@ map_models = {
 
 def help_models():
     for k, v in map_models.items():
-        print 'model "{0}":\n   {1}\n'.format(k, v[1])
+        print('model "{0}":\n   {1}\n'.format(k, v[1]))
 
 
 map_carbon_stars = {
@@ -130,9 +149,9 @@ map_carbon_stars = {
 
 def help_carbon_stars():
     for k, v in map_carbon_stars.items():
-        print 'model "{0}":\n   {1}\n'.format(k, v[1])
+        print('model "{0}":\n   {1}\n'.format(k, v[1]))
 
-#circumstellar dust
+# circumstellar dust
 map_circum_Mstars = {
     'nodustM': ('no dust', ''),
     'sil': ('Silicates', 'Bressan et al. (1998)'),
@@ -150,12 +169,12 @@ map_circum_Cstars = {
 
 
 def help_circumdust():
-    print 'M stars'
+    print('M stars')
     for k, v in map_circum_Mstars.items():
-        print 'model "{0}":\n   {1}\n'.format(k, v[1])
-    print 'C stars'
+        print('model "{0}":\n   {1}\n'.format(k, v[1]))
+    print('C stars')
     for k, v in map_circum_Cstars.items():
-        print 'model "{0}":\n   {1}\n'.format(k, v[1])
+        print('model "{0}":\n   {1}\n'.format(k, v[1]))
 
 
 map_isoc_val = {
@@ -181,7 +200,7 @@ __def_args__ = {'binary_frac': 0.3,
                 'isoc_age0': 12.7e9,
                 'isoc_dlage': 0.05,
                 'isoc_dz': 0.0001,
-                'isoc_kind': 'gi10a',
+                'isoc_kind': 'parsec_CAF09_v1.2S',
                 'isoc_lage0': 6.6,
                 'isoc_lage1': 10.13,
                 'isoc_val': 0,
@@ -205,19 +224,16 @@ __def_args__ = {'binary_frac': 0.3,
                 'output_gzip': 0,
                 'output_kind': 0,
                 'photsys_file': 'tab_mag_odfnew/tab_mag_bessell.dat',
+                'photsys_version': 'yang',
                 'submit_form': 'Submit'}
-
 
 
 def file_type(filename, stream=False):
     """ Detect potential compressed file
     Returns the gz, bz2 or zip if a compression is detected, else None.
     """
-    magic_dict = {
-        "\x1f\x8b\x08": "gz",
-        "\x42\x5a\x68": "bz2",
-        "\x50\x4b\x03\x04": "zip"
-        }
+    magic_dict = { "\x1f\x8b\x08": "gz", "\x42\x5a\x68": "bz2", "\x50\x4b\x03\x04": "zip" }
+
     max_len = max(len(x) for x in magic_dict)
     if not stream:
         with open(filename) as f:
@@ -233,11 +249,42 @@ def file_type(filename, stream=False):
     return None
 
 
-def __get_url_args(model=None, carbon=None, interp=None, Mstars=None, Cstars=None, dust=None, phot=None):
-    """ Update options in the URL query using internal shortcuts """
+def __get_url_args(model=None, carbon=None, interp=None, Mstars=None,
+                   Cstars=None, dust=None, phot=None):
+    """ Update options in the URL query using internal shortcuts
+
+    Parameters
+    ----------
+
+    model: str
+        select the type of model :func:`help_models`
+
+    carbon: str
+        carbon stars model :func:`help_carbon_stars`
+
+    interp: str
+        interpolation scheme
+
+    dust: str
+        circumstellar dust prescription :func:`help_circumdust`
+
+    Mstars: str
+        dust on M stars :func:`help_circumdust`
+
+    Cstars: str
+        dust on C stars :func:`help_circumdust`
+
+    phot: str
+        photometric set for photometry values :func:`help_phot`
+
+    Returns
+    -------
+    d: dict
+        cgi arguments
+    """
     d = __def_args__.copy()
 
-    #overwrite some parameters
+    # overwrite some parameters
     if model is not None:
         d['isoc_kind'] = map_models["%s" % model][0]
 
@@ -251,10 +298,10 @@ def __get_url_args(model=None, carbon=None, interp=None, Mstars=None, Cstars=Non
         d['dust_source'] = map_circum_Mstars[dust]
 
     if Cstars is not None:
-        d['dust_source'] = map_circum_Cstars[Cstars]
+        d['dust_sourceC'] = map_circum_Cstars[Cstars]
 
     if Mstars is not None:
-        d['dust_source'] = map_circum_Mstars[Mstars]
+        d['dust_sourceM'] = map_circum_Mstars[Mstars]
 
     if phot is not None:
         d['photsys_file'] = 'tab_mag_odfnew/tab_mag_{0}.dat'.format(phot)
@@ -266,52 +313,102 @@ def __query_website(d):
     """ Communicate with the CMD website """
     webserver = 'http://stev.oapd.inaf.it'
     print('Interrogating {0}...'.format(webserver))
-    q = urllib.urlencode(d)
-    #print('Query content: {0}'.format(q))
-    c = urllib2.urlopen(webserver + '/cgi-bin/cmd_2.3', q).read()
+    # url = webserver + '/cgi-bin/cmd_2.3'
+    url = webserver + '/cgi-bin/cmd'
+    q = urlencode(d)
+    # print('Query content: {0}'.format(q))
+    if py3k:
+        req = request.Request(url, q.encode('utf8'))
+        c = urlopen(req).read().decode('utf8')
+    else:
+        c = urlopen(url, q).read()
     aa = re.compile('output\d+')
     fname = aa.findall(c)
     if len(fname) > 0:
         url = '{0}/~lgirardi/tmp/{1}.dat'.format(webserver, fname[0])
         print('Downloading data...{0}'.format(url))
-        bf = urllib2.urlopen(url)
+        bf = urlopen(url)
         r = bf.read()
         typ = file_type(r, stream=True)
         if typ is not None:
             r = zlib.decompress(bytes(r), 15 + 32)
         return r
     else:
-        print c
+        print(c)
         raise RuntimeError('Server Response is incorrect')
 
 
 def __convert_to_Table(r, d=None):
     """ Make a table from the string response content of the website """
-    bf = StringIO(r)
-    t = Table(bf, type='tsv')
+
+    def find_data(txt, comment='#'):
+        for num, line in enumerate(txt.split('\n')):
+            if line[0] != comment:
+                return num
+
+    if py3k:
+        _r = r.decode('utf8')
+        start = find_data(_r) - 1
+        _r = '\n'.join(_r.split('\n')[start:])[1:].encode('utf8')
+        bf = BytesIO(_r)
+    else:
+        start = find_data(_r) - 1
+        _r = '\n'.join(_r.split('\n')[start:])[1:]
+        bf = StringIO(r)
+    t = Table(bf, dtype='tsv', names=True, comments='#')
     if d is not None:
         for k, v in d.items():
             t.header[k] = v
+
+    # make some aliases
+    aliases = (('logA', 'logageyr'),
+               ('logL', 'logLLo'),
+               ('logT', 'logTe'),
+               ('logg', 'logG'))
+
+    for a, b in aliases:
+        t.set_alias(a, b)
+
     return t
 
 
 def get_one_isochrone(age, metal, ret_table=True, **kwargs):
     """ get one isochrone at a given time and Z
-    INPUTS
-    ------
+
+    Parameters
+    ----------
+
     age: float
         age of the isochrone (in yr)
+
     metal: float
         metalicity of the isochrone
 
-    KEYWORDS
-    --------
     ret_table: bool
         if set, return a eztable.Table object of the data
 
-    **kwargs updates the web query
+    model: str
+        select the type of model :func:`help_models`
 
-    OUTPUTS
+    carbon: str
+        carbon stars model :func:`help_carbon_stars`
+
+    interp: str
+        interpolation scheme
+
+    dust: str
+        circumstellar dust prescription :func:`help_circumdust`
+
+    Mstars: str
+        dust on M stars :func:`help_circumdust`
+
+    Cstars: str
+        dust on C stars :func:`help_circumdust`
+
+    phot: str
+        photometric set for photometry values :func:`help_phot`
+
+    Returns
     -------
     r: Table or str
         if ret_table is set, return a eztable.Table object of the data
@@ -331,25 +428,46 @@ def get_one_isochrone(age, metal, ret_table=True, **kwargs):
 
 def get_Z_isochrones(z0, z1, dz, age, ret_table=True, **kwargs):
     """ get a sequence of isochrones at constant time but variable Z
-    INPUTS
-    ------
+
+    Parameters
+    ----------
     z0: float
         minimal value of Z
+
     z11: float
         maximal value of Z
+
     dz: float
         step in Z
+
     age: float
         age of the sequence (in yr)
 
-    KEYWORDS
-    --------
     ret_table: bool
         if set, return a eztable.Table object of the data
 
-    **kwargs updates the web query
+    model: str
+        select the type of model :func:`help_models`
 
-    OUTPUTS
+    carbon: str
+        carbon stars model :func:`help_carbon_stars`
+
+    interp: str
+        interpolation scheme
+
+    dust: str
+        circumstellar dust prescription :func:`help_circumdust`
+
+    Mstars: str
+        dust on M stars :func:`help_circumdust`
+
+    Cstars: str
+        dust on C stars :func:`help_circumdust`
+
+    phot: str
+        photometric set for photometry values :func:`help_phot`
+
+    Returns
     -------
     r: Table or str
         if ret_table is set, return a eztable.Table object of the data
@@ -371,25 +489,46 @@ def get_Z_isochrones(z0, z1, dz, age, ret_table=True, **kwargs):
 
 def get_t_isochrones(logt0, logt1, dlogt, metal, ret_table=True, **kwargs):
     """ get a sequence of isochrones at constant Z
-    INPUTS
-    ------
+
+    Parameters
+    ----------
     logt0: float
         minimal value of log(t/yr)
+
     logt1: float
         maximal value of log(t/yr)
+
     dlogt: float
         step in log(t/yr) for the sequence
+
     metal: float
         metallicity value to use (Zsun=0.019)
 
-    KEYWORDS
-    --------
     ret_table: bool
         if set, return a eztable.Table object of the data
 
-    **kwargs updates the web query
+    model: str
+        select the type of model :func:`help_models`
 
-    OUTPUTS
+    carbon: str
+        carbon stars model :func:`help_carbon_stars`
+
+    interp: str
+        interpolation scheme
+
+    dust: str
+        circumstellar dust prescription :func:`help_circumdust`
+
+    Mstars: str
+        dust on M stars :func:`help_circumdust`
+
+    Cstars: str
+        dust on C stars :func:`help_circumdust`
+
+    phot: str
+        photometric set for photometry values :func:`help_phot`
+
+    Returns
     -------
     r: Table or str
         if ret_table is set, return a eztable.Table object of the data
