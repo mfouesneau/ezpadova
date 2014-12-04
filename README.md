@@ -36,7 +36,6 @@ EXAMPLE USAGE
 >>> r = cmd.get_one_isochrones(1e7, 0.02, model='parsec12s', phot='spitzer')
 ```
 
-
 Available model interfaces
 --------------------------
 
