@@ -214,7 +214,7 @@ def file_type(filename, stream=False):
 
 
 def __get_url_args(model=None, carbon=None, interp=None, Mstars=None,
-                   Cstars=None, dust=None, phot=None):
+                   Cstars=None, dust=None, phot=None, **kwargs):
     """ Update options in the URL query using internal shortcuts
 
     Parameters
@@ -251,6 +251,10 @@ def __get_url_args(model=None, carbon=None, interp=None, Mstars=None,
     # overwrite some parameters
     if model is not None:
         d['isoc_kind'] = map_models["%s" % model][0]
+        if 'parsec' in model.lower():
+            d['output_evstage'] = 1
+        else:
+            d['output_evstage'] = 0
 
     if carbon is not None:
         d['kind_cspecmag'] = map_carbon_stars[carbon][0]
@@ -269,6 +273,10 @@ def __get_url_args(model=None, carbon=None, interp=None, Mstars=None,
 
     if phot is not None:
         d['photsys_file'] = 'tab_mag_odfnew/tab_mag_{0}.dat'.format(phot)
+
+    for k, v in kwargs.items():
+        if k in d:
+            d[k] = v
 
     return d
 
