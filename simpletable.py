@@ -208,7 +208,7 @@ def _fits_generate_header(tab):
     for k, v in tab.header.items():
         if (v not in ['', 'None', None]) & (k != 'NAME'):
             if (k != 'COMMENT') & (k != 'HISTORY'):
-                hdr.header.update(k, v)
+                hdr.update(k, v)
             else:
                 txt = v.split('\n')
                 for j in txt:
