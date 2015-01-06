@@ -456,7 +456,7 @@ def _ascii_read_header(fname, comments='#', delimiter=None, commentedHeader=True
     if not hasattr(fname, 'read'):
         stream.close()
     else:
-        stream.seek(0)
+        stream.seek(stream.tell() - len(line))
 
     return nlines, header, units, desc, alias, names
 
