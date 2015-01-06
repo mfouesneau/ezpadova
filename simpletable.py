@@ -457,6 +457,7 @@ def _ascii_read_header(fname, comments='#', delimiter=None, commentedHeader=True
         stream.close()
     else:
         stream.seek(stream.tell() - len(line))
+        nlines = 0  # make sure the value is set to the current position
 
     return nlines, header, units, desc, alias, names
 
@@ -584,6 +585,7 @@ class SimpleTable(object):
                 commentedHeader = kwargs.pop('commentedHeader', False)
                 n, header, units, comments, aliases, names = _ascii_read_header(fname, commentedHeader=commentedHeader, **kwargs)
                 kwargs.setdefault('names', names)
+                kwargs.setdefault('skip_header', n)
                 self.data = np.recfromcsv(fname, *args, **kwargs)
                 self.header = header
                 self._units.update(**units)
@@ -596,6 +598,7 @@ class SimpleTable(object):
                 commentedHeader = kwargs.pop('commentedHeader', True)
                 n, header, units, comments, aliases, names = _ascii_read_header(fname, commentedHeader=commentedHeader, **kwargs)
                 kwargs.setdefault('names', names)
+                kwargs.setdefault('skip_header', n)
                 self.data = np.recfromtxt(fname, *args, **kwargs)
                 self.header = header
                 self._units.update(**units)
