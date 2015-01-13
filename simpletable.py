@@ -21,6 +21,7 @@ import sys
 import numpy as np
 from numpy.lib import recfunctions
 from copy import deepcopy
+import re
 
 try:
     from astropy.io import fits as pyfits
@@ -558,6 +559,171 @@ def _convert_dict_to_structured_ndarray(data):
     return tab
 
 
+def __indent__(rows, header=None, units=None, headerChar='-',
+               delim=' | ', endline='\n', **kwargs):
+    """Indents a table by column.
+
+    Parameters
+    ----------
+    rows: sequences of rows
+        one sequence per row.
+
+    header: sequence of str
+        row consists of the columns' names
+
+    units: sequence of str
+        Sequence of units
+
+    headerChar: char
+        Character to be used for the row separator line
+
+    delim: char
+        The column delimiter.
+
+    returns
+    -------
+    txt: str
+        string represation of rows
+    """
+    length_data = list(map(max, zip(*[list(map(len, k)) for k in rows])))
+    length = length_data[:]
+
+    if (header is not None):
+        length_header = list(map(len, header))
+        length = list(map(max, zip(length_data, length_header)))
+
+    if (units is not None):
+        length_units = list(map(len, units))
+        length = list(map(max, zip(length_data, length_units)))
+
+    rowSeparator = headerChar * (sum(length) + len(delim) * (len(length) - 1))
+
+    # make the format
+    fmt = ['{{{0:d}:{1:d}s}}'.format(k, l) for (k, l) in enumerate(length)]
+    fmt = delim.join(fmt) + endline
+    # write the string
+    txt = rowSeparator + endline
+    if header is not None:
+        txt += fmt.format(*header)  # + endline
+        txt += rowSeparator + endline
+    if units is not None:
+        txt += fmt.format(*units)  # + endline
+        txt += rowSeparator + endline
+    for r in rows:
+        txt += fmt.format(*r)  # + endline
+    txt += rowSeparator + endline
+    return txt
+
+
+def pprint_rec_entry(data, num=0, keys=None):
+        """ print one line with key and values properly to be readable
+
+        Parameters
+        ----------
+        data: recarray
+            data to extract entry from
+
+        num: int, slice
+            indice selection
+
+        keys: sequence or str
+            if str, can be a regular expression
+            if sequence, the sequence of keys to print
+        """
+        if (keys is None) or (keys == '*'):
+            _keys = data.dtype.names
+        elif type(keys) in basestring:
+            _keys = [k for k in data.dtype.names if (re.match(keys, k) is not None)]
+        else:
+            _keys = keys
+
+        length = max(map(len, _keys))
+        fmt = '{{0:{0:d}s}}: {{1}}'.format(length)
+        data = data[num]
+
+        for k in _keys:
+            print(fmt.format(k, data[k]))
+
+
+def pprint_rec_array(data, idx=None, fields=None, ret=False, all=False,
+                     headerChar='-', delim=' | ', endline='\n' ):
+        """ Pretty print the table content
+            you can select the table parts to display using idx to
+            select the rows and fields to only display some columns
+            (ret is only for insternal use)
+
+        Parameters
+        ----------
+        data: array
+            array to show
+
+        idx: sequence, slide
+            sub selection to print
+
+        fields: str, sequence
+            if str can be a regular expression, and/or list of fields separated
+            by spaces or commas
+
+        ret: bool
+            if set return the string representation instead of printing the result
+
+        all: bool
+            if set, force to show all rows
+
+        headerChar: char
+            Character to be used for the row separator line
+
+        delim: char
+            The column delimiter.
+        """
+        if (fields is None) or (fields == '*'):
+            _keys = data.dtype.names
+        elif type(fields) in basestring:
+            if ',' in fields:
+                _fields = fields.split(',')
+            elif ' ' in fields:
+                _fields = fields.split()
+            else:
+                _fields = [fields]
+            lbls = data.dtype.names
+            _keys = []
+            for _fk in _fields:
+                _keys += [k for k in lbls if (re.match(_fk, k) is not None)]
+        else:
+            lbls = data.dtype.names
+            _keys = []
+            for _fk in _fields:
+                _keys += [k for k in lbls if (re.match(_fk, k) is not None)]
+
+        nfields = len(_keys)
+        nrows = len(data)
+        fields = list(_keys)
+
+        if idx is None:
+            if (nrows < 10) or (all is True):
+                rows = [ [ str(data[k][rk]) for k in _keys ] for rk in range(nrows)]
+            else:
+                _idx = range(6)
+                rows = [ [ str(data[k][rk]) for k in _keys ] for rk in range(5) ]
+                if nfields > 1:
+                    rows += [ ['...' for k in range(nfields) ] ]
+                else:
+                    rows += [ ['...' for k in range(nfields) ] ]
+                rows += [ [ str(data[k][rk]) for k in fields ] for rk in range(-5, 0)]
+        elif isinstance(idx, slice):
+            _idx = range(idx.start, idx.stop, idx.step or 1)
+            rows = [ [ str(data[k][rk]) for k in fields ] for rk in _idx]
+        else:
+            rows = [ [ str(data[k][rk]) for k in fields ] for rk in idx]
+
+        out = __indent__(rows, header=_keys, units=None, delim=delim,
+                         headerChar=headerChar, endline=endline)
+        if ret is True:
+            return out
+        else:
+            print(out)
+
+
 # ==============================================================================
 # SimpleTable -- provides table manipulations with limited storage formats
 # ==============================================================================
@@ -642,6 +808,120 @@ class SimpleTable(object):
                 self.header['NAME'] = 'No Name'
             else:
                 self.header['NAME'] = fname
+
+    def pprint_entry(self, num, keys=None):
+        """ print one line with key and values properly to be readable
+
+        Parameters
+        ----------
+        num: int, slice
+            indice selection
+
+        keys: sequence or str
+            if str, can be a regular expression
+            if sequence, the sequence of keys to print
+        """
+        if (keys is None) or (keys == '*'):
+            _keys = self.keys()
+        elif type(keys) in basestring:
+            _keys = [k for k in (self.keys() + tuple(self._aliases.keys()))
+                     if (re.match(keys, k) is not None)]
+        else:
+            _keys = keys
+
+        length = max(map(len, _keys))
+        fmt = '{{0:{0:d}s}}: {{1}}'.format(length)
+        data = self[num]
+
+        for k in _keys:
+            print(fmt.format(k, data[self.resolve_alias(k)]))
+
+    def pprint(self, idx=None, fields=None, ret=False, all=False,
+               full_match=False, headerChar='-', delim=' | ', endline='\n',
+               **kwargs):
+        """ Pretty print the table content
+            you can select the table parts to display using idx to
+            select the rows and fields to only display some columns
+            (ret is only for insternal use)
+
+        Parameters
+        ----------
+
+        idx: sequence, slide
+            sub selection to print
+
+        fields: str, sequence
+            if str can be a regular expression, and/or list of fields separated
+            by spaces or commas
+
+        ret: bool
+            if set return the string representation instead of printing the result
+
+        all: bool
+            if set, force to show all rows
+
+        headerChar: char
+            Character to be used for the row separator line
+
+        delim: char
+            The column delimiter.
+        """
+        if full_match is True:
+            fn = re.fullmatch
+        else:
+            fn = re.match
+
+        if (fields is None) or (fields == '*'):
+            _keys = self.keys()
+        elif type(fields) in basestring:
+            if ',' in fields:
+                _fields = fields.split(',')
+            elif ' ' in fields:
+                _fields = fields.split()
+            else:
+                _fields = [fields]
+            lbls = self.keys() + tuple(self._aliases.keys())
+            _keys = []
+            for _fk in _fields:
+                _keys += [k for k in lbls if (fn(_fk, k) is not None)]
+        else:
+            lbls = self.keys() + tuple(self._aliases.keys())
+            _keys = []
+            for _fk in _fields:
+                _keys += [k for k in lbls if (fn(_fk, k) is not None)]
+
+        nfields = len(_keys)
+
+        fields = list(map( self.resolve_alias, _keys ))
+
+        if idx is None:
+            if (self.nrows < 10) or all:
+                rows = [ [ str(self[k][rk]) for k in _keys ] for rk in range(self.nrows)]
+            else:
+                _idx = range(6)
+                rows = [ [ str(self[k][rk]) for k in _keys ] for rk in range(5) ]
+                if nfields > 1:
+                    rows += [ ['...' for k in range(nfields) ] ]
+                else:
+                    rows += [ ['...' for k in range(nfields) ] ]
+                rows += [ [ str(self[k][rk]) for k in fields ] for rk in range(-5, 0)]
+        elif isinstance(idx, slice):
+            _idx = range(idx.start, idx.stop, idx.step or 1)
+            rows = [ [ str(self[k][rk]) for k in fields ] for rk in _idx]
+        else:
+            rows = [ [ str(self[k][rk]) for k in fields ] for rk in idx]
+
+        if len(self._units) == 0:
+            units = None
+        else:
+            units = [ '(' + str( self._units.get(k, None) or '') + ')' for k in fields ]
+
+        out = __indent__(rows, header=_keys, units=units, delim=delim,
+                         headerChar=headerChar, endline=endline)
+        if ret is True:
+            return out
+        else:
+            print(out)
 
     def write(self, fname, **kwargs):
         """ write table into file
@@ -770,8 +1050,49 @@ class SimpleTable(object):
             for k, v in zip(colname, comment):
                 self._desc[self.resolve_alias(k)] = str(v)
 
-    def keys(self):
-        return self.colnames
+    def keys(self, regexp=None, full_match=False):
+        """
+        Return the data column names or a subset of it
+
+        Parameters
+        ----------
+        regexp: str
+            pattern to filter the keys with
+
+        full_match: bool
+            if set, use :func:`re.fullmatch` instead of :func:`re.match`
+
+        Try to apply the pattern at the start of the string, returning
+        a match object, or None if no match was found.
+
+        returns
+        -------
+        seq: sequence
+            sequence of keys
+        """
+        if (regexp is None) or (regexp == '*'):
+            return self.colnames
+        elif type(regexp) in basestring:
+            if full_match is True:
+                fn = re.fullmatch
+            else:
+                fn = re.match
+
+            if regexp.count(',') > 0:
+                _re = regexp.split(',')
+            elif regexp.count(' ') > 0:
+                _re = regexp.split()
+            else:
+                _re = [regexp]
+
+            lbls = self.colnames + tuple(self._aliases.keys())
+            _keys = []
+            for _rk in _re:
+                _keys += [k for k in lbls if (fn(_rk, k) is not None)]
+
+            return _keys
+        else:
+            raise ValueError('Unexpected type {0} for regexp'.format(type(regexp)))
 
     @property
     def name(self):
@@ -810,6 +1131,29 @@ class SimpleTable(object):
     def __getitem__(self, v):
         return np.asarray(self.data.__getitem__(self.resolve_alias(v)))
 
+    def get(self, v, full_match=False):
+        """ returns a table from columns given as v
+
+        this function is equivalent to :func:`__getitem__` but preserve the
+        Table format and associated properties (units, description, header)
+
+        Parameters
+        ----------
+        v: str
+            pattern to filter the keys with
+
+        full_match: bool
+            if set, use :func:`re.fullmatch` instead of :func:`re.match`
+
+        """
+        new_keys = self.keys(v)
+        t = self.__class__(self[new_keys])
+        t.header.update(**self.header)
+        t._aliases.update((k, v) for (k, v) in self._aliases.items() if v in new_keys)
+        t._units.update((k, v) for (k, v) in self._units.items() if v in new_keys)
+        t._desc.update((k, v) for (k, v) in self._desc.items() if v in new_keys)
+        return t
+
     def __setitem__(self, k, v):
         if k in self:
             return self.data.__setitem__(self.resolve_alias(k), v)
@@ -826,7 +1170,7 @@ class SimpleTable(object):
         return self.data.__iter__()
 
     def iterkeys(self):
-        for k in self.keys():
+        for k in self.colnames:
             yield k
 
     def itervalues(self):
@@ -846,9 +1190,9 @@ class SimpleTable(object):
             s += fmt.format(k, v)
 
         vals = [(k, self._units.get(k, ''), self._desc.get(k, ''))
-                for k in self.keys()]
+                for k in self.colnames]
         lengths = [(len(k), len(self._units.get(k, '')), len(self._desc.get(k, '')))
-                   for k in self.keys()]
+                   for k in self.colnames]
         lengths = list(map(max, (zip(*lengths))))
 
         s += '\nColumns:\n'
@@ -874,7 +1218,7 @@ class SimpleTable(object):
         return self.data.__getslice__(i, j)
 
     def __contains__(self, k):
-        return (k in self.keys()) or (k in self._aliases)
+        return (k in self.colnames) or (k in self._aliases)
 
     def __array__(self):
         return self.data
@@ -1157,7 +1501,7 @@ class SimpleTable(object):
             array of the result
         """
         _globals = {}
-        for k in ( list(self.keys()) + list(self._aliases.keys()) ):
+        for k in ( list(self.colnames) + list(self._aliases.keys()) ):
             if k in expr:
                 _globals[k] = self[k]
 
