@@ -4,14 +4,28 @@
 Requirements
 ------------
 * astropy:
-    provides a samp access (astropy.vo.samp) for both python 2 and 3
-    refactored version of sampy
-
     provides a replacement to pyfits
 
 .. note::
 
     pyfits can still be used instead but astropy is now the default
+
+
+.. code-block::python
+
+    >>> t = SimpleTable('path/mytable.csv')
+    # get a subset of columns only
+    >>> s = t.get('M_* logTe logLo U B V I J K')
+    # set some aliases
+    >>> t.set_alias('logT', 'logTe')
+    >>> t.set_alias('logL', 'logLLo')
+    # make a query on one or multiple column
+    >>> q = s.selectWhere('logT logL', '(J > 2) & (10 ** logT > 5000)')
+    # q is also a table object
+    >>> q.plot('logT', 'logL', ',')
+    # makes a simple plot
+    >>> s.write('newtable.fits')
+    # export the initial subtable to a new file
 """
 from __future__ import (absolute_import, division, print_function)
 
@@ -728,6 +742,35 @@ def pprint_rec_array(data, idx=None, fields=None, ret=False, all=False,
 # SimpleTable -- provides table manipulations with limited storage formats
 # ==============================================================================
 class SimpleTable(object):
+    """ Table class that is designed to be the basis of any format wrapping
+    around numpy recarrays
+
+    Attributes
+    ----------
+
+    fname: str or object
+        if str, the file to read from. This may be limited to the format
+        currently handled automatically. If the format is not correctly handled,
+        you can try by providing an object.__
+
+        if object with a structure like dict, ndarray, or recarray-like
+            the data will be encapsulated into a Table
+
+    caseless: bool
+        if set, column names will be caseless during operations
+
+    aliases: dict
+        set of column aliases (can be defined later :func:`set_alias`)
+
+    units: dict
+        set of column units (can be defined later :func:`set_unit`)
+
+    desc: dict
+        set of column description or comments (can be defined later :func:`set_comment`)
+
+    header: dict
+        key, value pair corresponding to the attributes of the table
+    """
 
     def __init__(self, fname, *args, **kwargs):
 
@@ -1096,36 +1139,43 @@ class SimpleTable(object):
 
     @property
     def name(self):
+        """ name of the table given by the Header['NAME'] attribute """
         return self.header.get('NAME', None)
 
     @property
     def colnames(self):
+        """ Sequence of column names """
         return self.data.dtype.names
 
     @property
     def ncols(self):
+        """ number of columns """
         return len(self.colnames)
 
     @property
     def nrows(self):
+        """ number of lines """
         return len(self.data)
 
     @property
     def nbytes(self):
-        """ return the number of bytes of the object """
+        """ number of bytes of the object """
         n = sum(k.nbytes if hasattr(k, 'nbytes') else sys.getsizeof(k)
                 for k in self.__dict__.values())
         return n
 
     def __len__(self):
+        """ number of lines """
         return self.nrows
 
     @property
     def shape(self):
+        """ shape of the data """
         return self.data.shape
 
     @property
     def dtype(self):
+        """ dtype of the data """
         return self.data.dtype
 
     def __getitem__(self, v):
@@ -1170,10 +1220,12 @@ class SimpleTable(object):
         return self.data.__iter__()
 
     def iterkeys(self):
+        """ Iterator over the columns of the table """
         for k in self.colnames:
             yield k
 
     def itervalues(self):
+        """ Iterator over the lines of the table """
         for l in self.data:
             yield l
 
@@ -1543,14 +1595,9 @@ class SimpleTable(object):
         """
         Select only a few fields in the table
         """
-        if fields.count(',') > 0:
-            _fields = fields.split(',')
-        elif fields.count(' ') > 0:
-            _fields = fields.split()
-        else:
-            _fields = fields
+        _fields = self.keys(fields)
 
-        if _fields == '*':
+        if fields == '*':
             if indices is None:
                 return self
             else:
