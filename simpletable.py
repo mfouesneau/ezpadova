@@ -3,12 +3,17 @@
 
 Requirements
 ------------
-* astropy:
-    provides a replacement to pyfits
 
-.. note::
+* FIT format:
+    * astropy:
+        provides a replacement to pyfits
+        pyfits can still be used instead but astropy is now the default
 
-    pyfits can still be used instead but astropy is now the default
+* HDF5 format:
+    * pytables
+
+RuntimeError will be raised when writing to a format associated with missing
+package.
 
 
 .. code-block::python
@@ -29,18 +34,26 @@ Requirements
 """
 from __future__ import (absolute_import, division, print_function)
 
-__version__ = '2.0'
+__version__ = '3.0'
 
 import sys
 import numpy as np
 from numpy.lib import recfunctions
 from copy import deepcopy
 import re
+import itertools
 
 try:
     from astropy.io import fits as pyfits
 except ImportError:
     import pyfits
+except:
+    pyfits = None
+
+try:
+    import tables
+except ImportError:
+    tables = None
 
 # ==============================================================================
 # Python 3 compatibility behavior
@@ -477,6 +490,180 @@ def _ascii_read_header(fname, comments='#', delimiter=None, commentedHeader=True
     return nlines, header, units, desc, alias, names
 
 
+def _hdf5_write_data(filename, data, tablename=None, mode='w', append=False,
+                     header={}, units={}, comments={}, aliases={}, **kwargs):
+    """ Write table into HDF format
+
+    Parameters
+    ----------
+    filename : file path, or tables.File instance
+        File to write to.  If opened, must be opened and writable (mode='w' or 'a')
+
+    data: recarray
+        data to write to the new file
+
+    tablename: str
+        path of the node including table's name
+
+    mode: str
+        in ('w', 'a') mode to open the file
+
+    append: bool
+        if set, tends to append data to an existing table
+
+    header: dict
+        table header
+
+    units: dict
+        dictionary of units
+
+    alias: dict
+        aliases
+
+    comments: dict
+        comments/description of keywords
+
+    .. note::
+        other keywords are forwarded to :func:`tables.openFile`
+    """
+
+    if hasattr(filename, 'read'):
+        raise Exception("HDF backend does not implement stream")
+
+    if append is True:
+        mode = 'a'
+
+    if isinstance(filename, tables.File):
+        if (filename.mode != mode) & (mode != 'r'):
+            raise tables.FileModeError('The file is already opened in a different mode')
+        hd5 = filename
+    else:
+        hd5 = tables.openFile(filename, mode=mode)
+
+    # check table name and path
+    tablename = tablename or header.get('NAME', None)
+    if tablename in ('', None, 'Noname', 'None'):
+        tablename = '/data'
+
+    w = tablename.split('/')
+    where = '/'.join(w[:-1])
+    name = w[-1]
+    if where in ('', None):
+        where = '/'
+    if where[0] != '/':
+        where = '/' + where
+
+    if append:
+        try:
+            t = hd5.getNode(where + name)
+            t.append(data.astype(t.description._v_dtype))
+            t.flush()
+        except tables.NoSuchNodeError:
+            print(("Warning: Table {0} does not exists.  \n A new table will be created").format(where + name))
+            append = False
+
+    if not append:
+        t = hd5.createTable(where, name, data, **kwargs)
+
+        # update header
+        for k, v in header.items():
+            if (k == 'FILTERS') & (float(t.attrs['VERSION']) >= 2.0):
+                t.attrs[k.lower()] = v
+            else:
+                t.attrs[k] = v
+        if 'TITLE' not in header:
+            t.attrs['TITLE'] = name
+
+        # add column descriptions and units
+        for e, colname in enumerate(data.dtype.names):
+            _u = units.get(colname, None)
+            _d = comments.get(colname, None)
+            if _u is not None:
+                t.attrs['FIELD_{0:d}_UNIT'] = _u
+            if _d is not None:
+                t.attrs['FIELD_{0:d}_DESC'] = _d
+
+        # add aliases
+        for i, (k, v) in enumerate(aliases.items()):
+            t.attrs['ALIAS{0:d}'.format(i)] = '{0:s}={1:s}'.format(k, v)
+
+        t.flush()
+
+    if not isinstance(filename, tables.File):
+        hd5.flush()
+        hd5.close()
+
+
+def _hdf5_read_data(filename, tablename=None, silent=False, *args, **kwargs):
+    """ Generate the corresponding ascii Header that contains all necessary info
+
+    Parameters
+    ----------
+    filename: str
+        file to read from
+
+    tablename: str
+        node containing the table
+
+    silent: bool
+        skip verbose messages
+
+    Returns
+    -------
+    hdr: str
+        string that will be be written at the beginning of the file
+    """
+    source = tables.openFile(filename, *args, **kwargs)
+
+    if tablename is None:
+        node = source.listNodes('/')[0]
+        tablename = node.name
+    else:
+        if tablename[0] != '/':
+            node = source.getNode('/' + tablename)
+        else:
+            node = source.getNode(tablename)
+    if not silent:
+        print("\tLoading table: {0}".format(tablename))
+
+    hdr = {}
+    aliases = {}
+
+    # read header
+    exclude = ['NROWS', 'VERSION', 'CLASS', 'EXTNAME', 'TITLE']
+    for k in node.attrs._v_attrnames:
+        if (k not in exclude):
+            if (k[:5] != 'FIELD') & (k[:5] != 'ALIAS'):
+                hdr[k] = node.attrs[k]
+            elif k[:5] == 'ALIAS':
+                c0, c1 = node.attrs[k].split('=')
+                aliases[c0] = c1
+
+    empty_name = ['', 'None', 'Noname', None]
+    if node.attrs['TITLE'] not in empty_name:
+        hdr['NAME'] = node.attrs['TITLE']
+    else:
+        hdr['NAME'] = '{0:s}/{1:s}'.format(filename, node.name)
+
+    # read column meta
+    units = {}
+    desc = {}
+
+    for (k, colname) in enumerate(node.colnames):
+        _u = getattr(node.attrs, 'FIELD_{0:d}_UNIT'.format(k), None)
+        _d = getattr(node.attrs, 'FIELD_{0:d}_DESC'.format(k), None)
+        if _u is not None:
+            units[colname] = _u
+        if _d is not None:
+            desc[colname] = _d
+
+    data = node[:]
+
+    source.close()
+
+    return hdr, aliases, units, desc, data
+
+
 def _ascii_generate_header(tab, comments='#', delimiter=' ',
                            commentedHeader=True):
     """ Generate the corresponding ascii Header that contains all necessary info
@@ -538,6 +725,57 @@ def _ascii_generate_header(tab, comments='#', delimiter=' ',
         hdr.append('{0:s}'.format(delimiter.join(tab.keys())))
 
     return '\n'.join(hdr)
+
+
+def _latex_writeto(filename, tab, comments='%'):
+    """ Write the data into a latex table format
+
+    Parameters
+    ----------
+    filename: str
+        file or unit to write into
+
+    tab: SimpleTable instance
+        table
+
+    comments: str
+        string to prepend header lines
+
+    delimiter: str, optional
+        The string used to separate values.  By default, this is any
+        whitespace.
+
+    commentedHeader: bool, optional
+        if set, the last line of the header is expected to be the column titles
+    """
+    txt = "\\begin{table}\n\\begin{center}\n"
+
+    # add caption
+    tabname = tab.header.get('NAME', None)
+    if tabname not in ['', None, 'None']:
+        txt += "\\caption{{{0:s}}}\n".format(tabname)
+
+    # tabular
+    txt += '\\begin{{tabular}}{{{0:s}}}\n'.format('c' * tab.ncols)
+    txt += tab.pprint(delim=' & ', fields='MAG*', headerChar='', endline='\\\\\n', all=True, ret=True)
+    txt += '\\end{tabular}\n'
+
+    # end table
+    txt += "\\end{center}\n"
+
+    # add notes if any
+    if len(tab._desc) > 0:
+        txt += '\% notes \n\\begin{scriptsize}\n'
+        for e, (k, v) in enumerate(tab._desc.items()):
+            if v not in (None, 'None', 'none', ''):
+                txt += '{0:d} {1:s}: {2:s} \\\\\n'.format(e, k, v)
+        txt += '\\end{scriptsize}\n'
+    txt += "\\end{table}\n"
+    if hasattr(filename, 'write'):
+        filename.write(txt)
+    else:
+        with open(filename, 'w') as unit:
+            unit.write(txt)
 
 
 def _convert_dict_to_structured_ndarray(data):
@@ -610,22 +848,25 @@ def __indent__(rows, header=None, units=None, headerChar='-',
         length_units = list(map(len, units))
         length = list(map(max, zip(length_data, length_units)))
 
-    rowSeparator = headerChar * (sum(length) + len(delim) * (len(length) - 1))
+    if headerChar not in (None, '', ' '):
+        rowSeparator = headerChar * (sum(length) + len(delim) * (len(length) - 1)) + endline
+    else:
+        rowSeparator = ''
 
     # make the format
     fmt = ['{{{0:d}:{1:d}s}}'.format(k, l) for (k, l) in enumerate(length)]
     fmt = delim.join(fmt) + endline
     # write the string
-    txt = rowSeparator + endline
+    txt = rowSeparator
     if header is not None:
         txt += fmt.format(*header)  # + endline
-        txt += rowSeparator + endline
+        txt += rowSeparator
     if units is not None:
         txt += fmt.format(*units)  # + endline
-        txt += rowSeparator + endline
+        txt += rowSeparator
     for r in rows:
         txt += fmt.format(*r)  # + endline
-    txt += rowSeparator + endline
+    txt += rowSeparator
     return txt
 
 
@@ -814,6 +1055,8 @@ class SimpleTable(object):
                 self._desc.update(**comments)
                 self._aliases.update(**aliases)
             elif (extension == 'fits') or dtype == 'fits':
+                if pyfits is None:
+                    raise RuntimeError('Cannot read this format, Astropy or pyfits not found')
                 if ('extname' not in kwargs) and ('ext' not in kwargs) and (len(args) == 0):
                     args = (1, )
                 self.data = np.array(pyfits.getdata(fname, *args, **kwargs))
@@ -821,6 +1064,15 @@ class SimpleTable(object):
                 self.header = header
                 self._desc.update(**comments)
                 self._units.update(**units)
+                self._aliases.update(**aliases)
+            elif (extension in ('hdf5', 'hd5', 'hdf')) or dtype in (extension in ('hdf5', 'hd5', 'hdf')):
+                if tables is None:
+                    raise RuntimeError('Cannot read this format, pytables not found')
+                hdr, aliases, units, desc, data = _hdf5_read_data(fname, *args, **kwargs)
+                self.data = data
+                self.header = hdr
+                self._units.update(**units)
+                self._desc.update(**desc)
                 self._aliases.update(**aliases)
             else:
                 raise Exception('Format {0:s} not handled'.format(extension))
@@ -1007,6 +1259,10 @@ class SimpleTable(object):
             else:
                 # patched version to correctly include the header
                 _fits_writeto(fname, self.data, hdr, **kwargs)
+        elif (extension in ('hdf', 'hdf5', 'hd5')):
+            _hdf5_write_data(fname, self.data, header=self.header,
+                             units=self._units, comments=self._desc,
+                             aliases=self._aliases, **kwargs)
         else:
             raise Exception('Format {0:s} not handled'.format(extension))
 
@@ -1133,6 +1389,11 @@ class SimpleTable(object):
             for _rk in _re:
                 _keys += [k for k in lbls if (fn(_rk, k) is not None)]
 
+            return _keys
+        elif hasattr(regexp, '__iter__'):
+            _keys = []
+            for k in regexp:
+                _keys += self.keys(k)
             return _keys
         else:
             raise ValueError('Unexpected type {0} for regexp'.format(type(regexp)))
@@ -1585,7 +1846,7 @@ class SimpleTable(object):
         Returns
         -------
         out: ndarray/ tuple of ndarrays
-            result equivalent to numpy.where
+        result equivalent to :func:`np.where`
 
         """
         ind = np.where(self.evalexpr(condition, condvars, dtype=bool ), *args, **kwargs)
@@ -1594,6 +1855,19 @@ class SimpleTable(object):
     def select(self, fields, indices=None, **kwargs):
         """
         Select only a few fields in the table
+
+        Parameters
+        ----------
+        fields: str or sequence
+            fields to keep in the resulting table
+
+        indices: sequence or slice
+            extract only on these indices
+
+        returns
+        -------
+        tab: SimpleTable instance
+            resulting table
         """
         _fields = self.keys(fields)
 
@@ -1627,6 +1901,9 @@ class SimpleTable(object):
 
         Parameters
         ----------
+        fields: str or sequence
+            fields to keep in the resulting table
+
         condition: str
             expression to evaluate on the table
             includes mathematical operations and attribute names
@@ -1636,6 +1913,8 @@ class SimpleTable(object):
 
         Returns
         -------
+        tab: SimpleTable instance
+            resulting table
         """
         if condition in [True, 'True', None]:
             ind = None
@@ -1645,6 +1924,90 @@ class SimpleTable(object):
         tab = self.select(fields, indices=ind)
 
         return tab
+
+    def groupby(self, key):
+        """
+        Create an iterator which returns (key, sub-table) grouped by each value
+        of key(value)
+
+        Parameters
+        ----------
+        key: str
+            expression or pattern to filter the keys with
+
+        Returns
+        -------
+        key: str or sequence
+            group key
+
+        tab: SimpleTable instance
+           sub-table of the group
+           header, aliases and column metadata are preserved (linked to the
+           master table).
+        """
+        _key = self.keys(key)
+        getter = operator.itemgetter(*_key)
+
+        for k, grp in itertools.groupby(self.data, getter):
+            t = self.__class__(np.dstack(grp))
+            t.header = self.header
+            t._aliases = self._aliases
+            t._units = self._units
+            t._desc = self._desc
+            yield (k, t)
+
+    def stats(self, fn=None, fields=None, fill=None):
+        """ Make statistics on columns of a table
+
+        Paramters
+        ---------
+        fn: callable or sequence of callables
+            functions to apply to each column
+            default: (np.mean, np.std, np.nanmin, np.nanmax)
+
+        fields: str or sequence
+            any key or key expression to subselect columns
+            default is all columns
+
+        fill: value
+            value when not applicable
+            default np.nan
+
+        returns
+        -------
+        tab: Table instance
+            collection of statistics, one column per function in fn and 1 ligne
+            per column in the table
+        """
+        from collections import OrderedDict
+
+        fn = (stats.mean, stats.std,
+              stats.min, stats.max,
+              stats.has_nan)
+
+        d = OrderedDict()
+        d.setdefault('FIELD', [])
+        for k in fn:
+            d.setdefault(k.__name__, [])
+
+        if fields is None:
+            fields = self.colnames
+        else:
+            fields = self.keys(fields)
+
+        if fill is None:
+            fill = np.nan
+
+        for k in fields:
+            d['FIELD'].append(k)
+            for fnk in fn:
+                try:
+                    val = fnk(self[k])
+                except:
+                    val = fill
+                d[fnk.__name__].append(val)
+
+        return self.__class__(d, dtype=dict)
 
     # method aliases
     remove_column = remove_columns
@@ -1657,9 +2020,59 @@ class SimpleTable(object):
     delCol = remove_columns
 
 
+class stats(object):
+    """ Namespace of some functions """
+    @classmethod
+    def has_nan(s, v):
+        return (True in np.isnan(v))
+
+    @classmethod
+    def mean(s, v):
+        return np.nanmean(v)
+    mean.__func__.__doc__ = np.nanmean.__doc__
+
+    @classmethod
+    def max(s, v):
+        return np.nanmax(v)
+    max.__func__.__doc__ = np.nanmax.__doc__
+
+    @classmethod
+    def min(s, v):
+        return np.nanmin(v)
+    min.__func__.__doc__ = np.nanmin.__doc__
+
+    @classmethod
+    def std(s, v):
+        return np.nanstd(v)
+    std.__func__.__doc__ = np.nanstd.__doc__
+
+    @classmethod
+    def var(s, v):
+        return np.var(v)
+    var.__func__.__doc__ = np.nanvar.__doc__
+
+    @classmethod
+    def p16(s, v):
+        return np.nanpercentile(v, 16)
+    p16.__func__.__doc__ = np.nanpercentile.__doc__
+
+    @classmethod
+    def p84(s, v):
+        return np.nanpercentile(v, 84)
+    p84.__func__.__doc__ = np.nanpercentile.__doc__
+
+    @classmethod
+    def p50(s, v):
+        return np.nanmedian(v)
+    p50.__func__.__doc__ = np.nanpercentile.__doc__
+
+
+# =============================================================================
+# Adding some plotting functions
+# =============================================================================
+
 try:
     import pylab as plt
-    from functools import wraps
 
     def plot_function(tab, fn, *args, **kwargs):
         """ Generate a plotting method of tab from a given function
@@ -1728,8 +2141,8 @@ try:
         return _fn(*_args, **kwargs)
 
     def attached_function(fn, doc=None):
+        """ eclare a function as a method to the class table"""
 
-        @wraps(fn)
         def _fn(self, *args, **kwargs):
             return plot_function(self, fn, *args, **kwargs)
 
@@ -1749,4 +2162,3 @@ try:
 
 except Exception as e:
     print(e)
-    pass
