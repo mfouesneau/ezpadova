@@ -35,13 +35,17 @@ package.
 from __future__ import (absolute_import, division, print_function)
 
 __version__ = '3.0'
+__all__ = ['AstroHelpers', 'AstroTable', 'SimpleTable', 'stats']
 
 import sys
-import numpy as np
-from numpy.lib import recfunctions
+import math
 from copy import deepcopy
 import re
 import itertools
+from functools import wraps, partial
+import numpy as np
+from numpy import deg2rad, rad2deg, sin, cos, sqrt, arcsin, arctan2
+from numpy.lib import recfunctions
 
 try:
     from astropy.io import fits as pyfits
@@ -979,6 +983,327 @@ def pprint_rec_array(data, idx=None, fields=None, ret=False, all=False,
             print(out)
 
 
+def elementwise(func):
+    """
+    Quick and dirty elementwise function decorator it provides a quick way
+    to apply a function either on one element or a sequence of elements
+    """
+    @wraps(func)
+    def wrapper(it, **kwargs):
+        if hasattr(it, '__iter__') & (type(it) not in basestring):
+            _f = partial(func, **kwargs)
+            return map(_f, it)
+        else:
+            return func(it, **kwargs)
+    return wrapper
+
+
+class AstroHelpers(object):
+    """ Helpers related to astronomy data """
+
+    @staticmethod
+    @elementwise
+    def hms2deg(_str, delim=':'):
+        """ Convert hex coordinates into degrees
+
+        Parameters
+        ----------
+        str: string or sequence
+            string to convert
+
+        delimiter: str
+            character delimiting the fields
+
+        Returns
+        -------
+        deg: float
+            angle in degrees
+        """
+        if _str[0] == '-':
+            neg = -1
+            _str = _str[1:]
+        else:
+            neg = 1
+        _str = _str.split(delim)
+        return neg * ((((float(_str[-1]) / 60. +
+                         float(_str[1])) / 60. +
+                        float(_str[0])) / 24. * 360.))
+
+    @staticmethod
+    @elementwise
+    def deg2dms(val, delim=':'):
+        """ Convert degrees into hex coordinates
+        Parameters
+        ----------
+        deg: float
+            angle in degrees
+
+        delimiter: str
+            character delimiting the fields
+
+        Returns
+        -------
+        str: string or sequence
+            string to convert
+        """
+        if val < 0:
+            sign = -1
+        else:
+            sign = 1
+        d = int( sign * val )
+        m = int( (sign * val - d) * 60. )
+        s = (( sign * val - d) * 60.  - m) * 60.
+        return '{0}{1}{2}{3}{4}'.format( sign * d, delim, m, delim, s)
+
+    @staticmethod
+    @elementwise
+    def deg2hms(val, delim=':'):
+        """ Convert degrees into hex coordinates
+
+        Parameters
+        ----------
+        deg: float
+            angle in degrees
+
+        delimiter: str
+            character delimiting the fields
+
+        Returns
+        -------
+        str: string or sequence
+            string to convert
+        """
+        if val < 0:
+            sign = -1
+        else:
+            sign = 1
+        h = int( sign * val / 45. * 3.)   # * 24 / 360
+        m = int( (sign * val / 45. * 3. - h) * 60. )
+        s = (( sign * val / 45. * 3. - h) * 60.  - m) * 60.
+        return '{0}{1}{2}{3}{4}'.format( sign * h, delim, m, delim, s)
+
+    @staticmethod
+    @elementwise
+    def dms2deg(_str, delim=':'):
+        """ Convert hex coordinates into degrees
+        Parameters
+        ----------
+        str: string or sequence
+            string to convert
+
+        delimiter: str
+            character delimiting the fields
+
+        Returns
+        -------
+        deg: float
+            angle in degrees
+        """
+        if _str[0] == '-':
+            neg = -1
+            _str = _str[1:]
+        else:
+            neg = 1
+        _str = _str.split(delim)
+        return (neg * ((float(_str[-1]) / 60. + float(_str[1])) / 60. + float(_str[0])))
+
+    @staticmethod
+    @elementwise
+    def euler(ai_in, bi_in, select, b1950=False, dtype='f8'):
+        """
+        Transform between Galactic, celestial, and ecliptic coordinates.
+        Celestial coordinates (RA, Dec) should be given in equinox J2000
+        unless the b1950 is True.
+
+        select From           To         |   select    From          To
+        ----------------------------------------------------------------------
+        1      RA-Dec (2000)  Galactic   |     4       Ecliptic      RA-Dec
+        2      Galactic       RA-DEC     |     5       Ecliptic      Galactic
+        3      RA-Dec         Ecliptic   |     6       Galactic      Ecliptic
+
+        Parameters
+        ----------
+
+        long_in: float, or sequence
+            Input Longitude in DEGREES, scalar or vector.
+
+        lat_in: float, or sequence
+            Latitude in DEGREES
+
+        select: int
+            Integer from 1 to 6 specifying type of coordinate transformation.
+
+        b1950: bool
+            set equinox set to 1950
+
+
+        Returns
+        -------
+        long_out: float, seq
+            Output Longitude in DEGREES
+
+        lat_out: float, seq
+            Output Latitude in DEGREES
+
+
+        REVISION HISTORY:
+        Written W. Landsman,  February 1987
+        Adapted from Fortran by Daryl Yentis NRL
+        Converted to IDL V5.0   W. Landsman   September 1997
+        Made J2000 the default, added /FK4 keyword  W. Landsman December 1998
+        Add option to specify SELECT as a keyword W. Landsman March 2003
+        Converted from IDL to numerical Python: Erin Sheldon, NYU, 2008-07-02
+        """
+
+        # Make a copy as an array. ndmin=1 to avoid messed up scalar arrays
+        ai = np.array(ai_in, ndmin=1, copy=True, dtype=dtype)
+        bi = np.array(bi_in, ndmin=1, copy=True, dtype=dtype)
+
+        PI = math.pi
+        # HALFPI = PI / 2.0
+        D2R = PI / 180.0
+        R2D = 1.0 / D2R
+
+        twopi   = 2.0 * PI
+        fourpi  = 4.0 * PI
+
+        #   J2000 coordinate conversions are based on the following constants
+        #   (see the Hipparcos explanatory supplement).
+        #  eps = 23.4392911111d           Obliquity of the ecliptic
+        #  alphaG = 192.85948d            Right Ascension of Galactic North Pole
+        #  deltaG = 27.12825d             Declination of Galactic North Pole
+        #  lomega = 32.93192d             Galactic longitude of celestial equator
+        #  alphaE = 180.02322d            Ecliptic longitude of Galactic North Pole
+        #  deltaE = 29.811438523d         Ecliptic latitude of Galactic North Pole
+        #  Eomega  = 6.3839743d           Galactic longitude of ecliptic equator
+        # Parameters for all the different conversions
+        if b1950:
+            # equinox = '(B1950)'
+            psi    = np.array([ 0.57595865315, 4.9261918136,
+                                0.00000000000, 0.0000000000,
+                                0.11129056012, 4.7005372834], dtype=dtype)
+            stheta = np.array([ 0.88781538514, -0.88781538514,
+                                0.39788119938, -0.39788119938,
+                                0.86766174755, -0.86766174755], dtype=dtype)
+            ctheta = np.array([ 0.46019978478, 0.46019978478,
+                                0.91743694670, 0.91743694670,
+                                0.49715499774, 0.49715499774], dtype=dtype)
+            phi    = np.array([ 4.9261918136,  0.57595865315,
+                                0.0000000000, 0.00000000000,
+                                4.7005372834, 0.11129056012], dtype=dtype)
+        else:
+            # equinox = '(J2000)'
+            psi    = np.array([ 0.57477043300, 4.9368292465,
+                                0.00000000000, 0.0000000000,
+                                0.11142137093, 4.71279419371], dtype=dtype)
+            stheta = np.array([ 0.88998808748, -0.88998808748,
+                                0.39777715593, -0.39777715593,
+                                0.86766622025, -0.86766622025], dtype=dtype)
+            ctheta = np.array([ 0.45598377618, 0.45598377618,
+                                0.91748206207, 0.91748206207,
+                                0.49714719172, 0.49714719172], dtype=dtype)
+            phi    = np.array([ 4.9368292465,  0.57477043300,
+                                0.0000000000, 0.00000000000,
+                                4.71279419371, 0.11142137093], dtype=dtype)
+
+        # zero offset
+        i  = select - 1
+        a  = ai * D2R - phi[i]
+
+        b = bi * D2R
+        sb = sin(b)
+        cb = cos(b)
+        cbsa = cb * sin(a)
+        b  = -stheta[i] * cbsa + ctheta[i] * sb
+        w, = np.where(b > 1.0)
+        if w.size > 0:
+            b[w] = 1.0
+        bo = arcsin(b) * R2D
+        a  = arctan2( ctheta[i] * cbsa + stheta[i] * sb, cb * cos(a) )
+        ao = ( (a + psi[i] + fourpi) % twopi) * R2D
+        return ao, bo
+
+    @staticmethod
+    def sphdist(ra1, dec1, ra2, dec2):
+        """measures the spherical distance between 2 points
+
+        Parameters
+        ----------
+        ra1: float or sequence
+            first right ascensions in degrees
+
+        dec1: float or sequence
+            first declination in degrees
+        ra2: float or sequence
+            second right ascensions in degrees
+        dec2: float or sequence
+            first declination in degrees
+
+        Returns
+        -------
+        Outputs: float or sequence
+            returns a distance in degrees
+        """
+        dec1_r = deg2rad(dec1)
+        dec2_r = deg2rad(dec2)
+        return 2. * rad2deg(arcsin(sqrt((sin((dec1_r - dec2_r) / 2)) ** 2 +
+                                        cos(dec1_r) * cos(dec2_r) * (
+                                            sin((deg2rad(ra1 - ra2)) / 2)) **
+                                        2)))
+
+    @staticmethod
+    def conesearch(ra0, dec0, ra, dec, r, outtype=0):
+        """ Perform a cone search on a table
+
+        Parameters
+        ----------
+        ra0: ndarray[ndim=1, dtype=float]
+            column name to use as RA source in degrees
+
+        dec0: ndarray[ndim=1, dtype=float]
+            column name to use as DEC source in degrees
+
+        ra: float
+            ra to look for (in degree)
+
+        dec: float
+            ra to look for (in degree)
+
+        r: float
+            distance in degrees
+
+        outtype: int
+            type of outputs
+                0 -- minimal, indices of matching coordinates
+                1 -- indices and distances of matching coordinates
+                2 -- full, boolean filter and distances
+
+        Returns
+        -------
+        t: tuple
+            if outtype is 0:
+                only return indices from ra0, dec0
+            elif outtype is 1:
+                return indices from ra0, dec0 and distances
+            elif outtype is 2:
+                return conditional vector and distance to all ra0, dec0
+        """
+        @elementwise
+        def getDist( pk ):
+            """ get spherical distance between 2 points """
+            return AstroHelpers.sphdist(pk[0], pk[1], ra, dec)
+
+        dist = np.array(list(getDist(zip(ra0, dec0))))
+        v = (dist <= r)
+
+        if outtype == 0:
+            return np.ravel(np.where(v))
+        elif outtype == 1:
+            return np.ravel(np.where(v)), dist[v]
+        else:
+            return v, dist
+
+
 # ==============================================================================
 # SimpleTable -- provides table manipulations with limited storage formats
 # ==============================================================================
@@ -1024,8 +1349,8 @@ class SimpleTable(object):
         if (type(fname) == dict) or (dtype in [dict, 'dict']):
             self.header = fname.pop('header', {})
             self.data = _convert_dict_to_structured_ndarray(fname)
-        elif (type(fname) in (str,)) or (dtype is not None):
-            if (type(fname) in (str,)):
+        elif (type(fname) in basestring) or (dtype is not None):
+            if (type(fname) in basestring):
                 extension = fname.split('.')[-1]
             else:
                 extension = None
@@ -1096,6 +1421,9 @@ class SimpleTable(object):
                 self._aliases = fname._aliases
                 self._units = fname._units
                 self._desc = fname._desc
+        elif hasattr(fname, 'dtype'):
+            self.data = np.array(fname)
+            self.header = {}
         else:
             raise Exception('Type {0!s:s} not handled'.format(type(fname)))
         if 'NAME' not in self.header:
@@ -1442,6 +1770,77 @@ class SimpleTable(object):
     def __getitem__(self, v):
         return np.asarray(self.data.__getitem__(self.resolve_alias(v)))
 
+    def take(self, indices, axis=None, out=None, mode='raise'):
+        """
+        Take elements from an array along an axis.
+
+        This function does the same thing as "fancy" indexing (indexing arrays
+        using arrays); however, it can be easier to use if you need elements
+        along a given axis.
+
+        Parameters
+        ----------
+        indices : array_like
+            The indices of the values to extract.
+            Also allow scalars for indices.
+
+        axis : int, optional
+            The axis over which to select values. By default, the flattened
+            input array is used.
+
+        out : ndarray, optional
+            If provided, the result will be placed in this array. It should
+            be of the appropriate shape and dtype.
+
+        mode : {'raise', 'wrap', 'clip'}, optional
+            Specifies how out-of-bounds indices will behave.
+
+            * 'raise' -- raise an error (default)
+            * 'wrap' -- wrap around
+            * 'clip' -- clip to the range
+
+            'clip' mode means that all indices that are too large are replaced
+            by the index that addresses the last element along that axis. Note
+            that this disables indexing with negative numbers.
+
+        Returns
+        -------
+        subarray : ndarray
+            The returned array has the same type as `a`.
+        """
+        return self.data.take(indices, axis, out, mode)
+
+    def compress(self, condition, axis=None, out=None):
+        """
+        Return selected slices of an array along given axis.
+
+        When working along a given axis, a slice along that axis is returned in
+        `output` for each index where `condition` evaluates to True. When
+        working on a 1-D array, `compress` is equivalent to `extract`.
+
+        Parameters
+        ----------
+        condition : 1-D array of bools
+            Array that selects which entries to return. If len(condition)
+            is less than the size of `a` along the given axis, then output is
+            truncated to the length of the condition array.
+
+        axis : int, optional
+            Axis along which to take slices. If None (default), work on the
+            flattened array.
+
+        out : ndarray, optional
+            Output array.  Its type is preserved and it must be of the right
+            shape to hold the output.
+
+        Returns
+        -------
+        compressed_array : ndarray
+            A copy of `a` without the slices along axis for which `condition`
+            is false.
+        """
+        return self.data.compress(condition, axis, out)
+
     def get(self, v, full_match=False):
         """ returns a table from columns given as v
 
@@ -1531,7 +1930,11 @@ class SimpleTable(object):
         return self.data.__getslice__(i, j)
 
     def __contains__(self, k):
-        return (k in self.colnames) or (k in self._aliases)
+        if hasattr(k, 'decode'):
+            _k = k.decode('utf8')
+        else:
+            _k = k
+        return (_k in self.colnames) or (_k in self._aliases)
 
     def __array__(self):
         return self.data
@@ -1648,7 +2051,7 @@ class SimpleTable(object):
               constructed by filling the fields with the selected entries.
               Matching is not preserved if there are some duplicates...
         """
-        arr = recfunctions.join_by(key, self, r2, jointype=jointype,
+        arr = recfunctions.join_by(key, self.data, r2.data, jointype=jointype,
                                    r1postfix=r1postfix, r2postfix=r2postfix,
                                    defaults=defaults, usemask=False,
                                    asrecarray=True)
@@ -1711,7 +2114,7 @@ class SimpleTable(object):
             self.set_unit(name, unit)
 
         if description is not None:
-            self.set_unit(name, description)
+            self.set_comment(name, description)
 
     def append_row(self, iterable):
         """
@@ -1875,7 +2278,7 @@ class SimpleTable(object):
             if indices is None:
                 return self
             else:
-                tab = self.__class__(self[indices])
+                tab = self.__class__(self.take(indices))
                 for k in self.__dict__.keys():
                     if k not in ('data', ):
                         setattr(tab, k, deepcopy(self.__dict__[k]))
@@ -1885,7 +2288,7 @@ class SimpleTable(object):
             for k in _fields:
                 _k = self.resolve_alias(k)
                 if indices is not None:
-                    d[k] = self[_k][indices]
+                    d[k] = self[_k].take(indices)
                 else:
                     d[k] = self[_k]
             d['header'] = deepcopy(self.header)
@@ -2020,8 +2423,270 @@ class SimpleTable(object):
     delCol = remove_columns
 
 
+class AstroTable(SimpleTable):
+    """
+    Derived from the Table, this class add implementations of common astro
+    tools especially conesearch
+    """
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        self._ra_name, self._dec_name = self.__autoRADEC__()
+        if (len(args) > 0):
+            if isinstance(args[0], AstroTable):
+                self._ra_name = args[0]._ra_name
+                self._dec_name = args[0]._dec_name
+        self._ra_name = kwargs.get('ra_name', self._ra_name)
+        self._dec_name = kwargs.get('dec_name', self._dec_name)
+
+    def __autoRADEC__(self):
+        """ Tries to identify the columns containing RA and DEC coordinates """
+        if 'ra' in self:
+            ra_name = 'ra'
+        elif 'RA' in self:
+            ra_name = 'RA'
+        else:
+            ra_name = None
+        if 'dec' in self:
+            dec_name = 'dec'
+        elif 'DEC' in self:
+            dec_name = 'DEC'
+        else:
+            dec_name = None
+        return ra_name, dec_name
+
+    def set_RA(self, val):
+        """ Set the column that defines RA coordinates """
+        assert(val in self), 'column name {} not found in the table'.format(val)
+        self._ra_name = val
+
+    def set_DEC(self, val):
+        """ Set the column that defines DEC coordinates """
+        assert(val in self), 'column name {} not found in the table'.format(val)
+        self._dec_name = val
+
+    def get_RA(self, degree=True):
+        """ Returns RA, converted from hexa/sexa into degrees """
+        if self._ra_name is None:
+            return None
+        if (not degree) or (self.dtype[self._ra_name].kind != 'S'):
+            return self[self._ra_name]
+        else:
+            if (len(str(self[0][self._ra_name]).split(':')) == 3):
+                return np.asarray(AstroHelpers.hms2deg(self[self._ra_name],
+                                                       delim=':'))
+            elif (len(str(self[0][self._ra_name]).split(' ')) == 3):
+                return np.asarray(AstroHelpers.hms2deg(self[self._ra_name],
+                                                       delim=' '))
+            else:
+                raise Exception('RA Format not understood')
+
+    def get_DEC(self, degree=True):
+        """ Returns RA, converted from hexa/sexa into degrees """
+        if self._dec_name is None:
+            return None
+        if (not degree) or (self.dtype[self._dec_name].kind != 'S'):
+            return self[self._dec_name]
+        else:
+            if (len(str(self[0][self._dec_name]).split(':')) == 3):
+                return np.asarray(AstroHelpers.dms2deg(self[self._dec_name],
+                                                       delim=':'))
+            elif (len(str(self[0][self._dec_name]).split(' ')) == 3):
+                return np.asarray(AstroHelpers.dms2deg(self[self._dec_name],
+                                                       delim=' '))
+            else:
+                raise Exception('RA Format not understood')
+
+    def info(self):
+        s = "\nTable: {name:s}\n       nrows={s.nrows:d}, ncols={s.ncols:d}, mem={size:s}"
+        s = s.format(name=self.header.get('NAME', 'Noname'), s=self,
+                     size=pretty_size_print(self.nbytes))
+
+        s += '\n\nHeader:\n'
+        vals = list(self.header.items())
+        length = max(map(len, self.header.keys()))
+        fmt = '\t{{0:{0:d}s}} {{1}}\n'.format(length)
+        for k, v in vals:
+            s += fmt.format(k, v)
+
+        vals = [(k, self._units.get(k, ''), self._desc.get(k, ''))
+                for k in self.colnames]
+        lengths = [(len(k), len(self._units.get(k, '')), len(self._desc.get(k, '')))
+                   for k in self.colnames]
+        lengths = list(map(max, (zip(*lengths))))
+
+        if (self._ra_name is not None) & (self._dec_name is not None):
+            s += "\nPosition coordinate columns: {0}, {1}\n".format(self._ra_name,
+                                                                    self._dec_name)
+
+        s += '\nColumns:\n'
+
+        fmt = '\t{{0:{0:d}s}} {{1:{1:d}s}} {{2:{2:d}s}}\n'.format(*(k + 1 for k in lengths))
+        for k, u, c in vals:
+            s += fmt.format(k, u, c)
+
+        print(s)
+
+        if len(self._aliases) > 0:
+            print("\nTable contains alias(es):")
+            for k, v in self._aliases.items():
+                print('\t{0:s} --> {1:s}'.format(k, v))
+
+    def coneSearch(self, ra, dec, r, outtype=0):
+        """ Perform a cone search on a table
+
+        Parameters
+        ----------
+        ra0: ndarray[ndim=1, dtype=float]
+            column name to use as RA source in degrees
+
+        dec0: ndarray[ndim=1, dtype=float]
+            column name to use as DEC source in degrees
+
+        ra: float
+            ra to look for (in degree)
+
+        dec: float
+            ra to look for (in degree)
+
+        r: float
+            distance in degrees
+
+        outtype: int
+            type of outputs
+                0 -- minimal, indices of matching coordinates
+                1 -- indices and distances of matching coordinates
+                2 -- full, boolean filter and distances
+
+        Returns
+        -------
+        t: tuple
+            if outtype is 0:
+                only return indices from ra0, dec0
+            elif outtype is 1:
+                return indices from ra0, dec0 and distances
+            elif outtype is 2:
+                return conditional vector and distance to all ra0, dec0
+        """
+        if (self._ra_name is None) or (self._dec_name is None):
+            raise AttributeError('Coordinate columns not set.')
+
+        ra0  = self.get_RA()
+        dec0 = self.get_DEC()
+        return AstroHelpers.conesearch(ra0, dec0, ra, dec, r, outtype=outtype)
+
+    def zoneSearch(self, ramin, ramax, decmin, decmax, outtype=0):
+        """ Perform a zone search on a table, i.e., a rectangular selection
+        Parameters
+        ----------
+        ramin: float
+            minimal value of RA
+
+        ramax: float
+            maximal value of RA
+
+        decmin: float
+            minimal value of DEC
+
+        decmax: float
+            maximal value of DEC
+
+        outtype: int
+            type of outputs
+                0 or 1 -- minimal, indices of matching coordinates
+                2 -- full, boolean filter and distances
+
+        Returns
+        -------
+        r: sequence
+            indices or conditional sequence of matching values
+        """
+
+        assert( (self._ra_name is not None) & (self._dec_name is not None) ), 'Coordinate columns not set.'
+
+        ra0  = self.get_RA()
+        dec0 = self.get_DEC()
+        ind = (ra0 >= ramin) & (ra0 <= ramax) & (dec0 >= decmin) & (dec0 <= decmax)
+        if outtype <= 2:
+            return ind
+        else:
+            return np.where(ind)
+
+    def where(self, condition=None, condvars=None, cone=None, zone=None, **kwargs):
+        """ Read table data fulfilling the given `condition`.
+        Only the rows fulfilling the `condition` are included in the result.
+
+        Parameters
+        ----------
+        condition: str
+            expression to evaluate on the table
+            includes mathematical operations and attribute names
+
+        condvars: dictionary, optional
+            A dictionary that replaces the local operands in current frame.
+
+        Returns
+        -------
+        out: ndarray/ tuple of ndarrays
+        result equivalent to :func:`np.where`
+        """
+        if cone is not None:
+            if len(cone) != 3:
+                raise ValueError('Expecting cone keywords as a triplet (ra, dec, r)')
+        if zone is not None:
+            if len(zone) != 4:
+                raise ValueError('Expecting zone keywords as a tuple of 4 elements (ramin, ramax, decmin, decmax)')
+
+        if condition is not None:
+            ind = super(self.__class__, self).where(condition, **kwargs)
+            if ind is None:
+                if (cone is None) & (zone is None):
+                    return None
+        else:
+            ind = True
+
+        blobs = []
+        if (cone is not None):
+            ra, dec, r = cone
+            _ind, d = self.coneSearch(ra, dec, r, outtype=1)
+            ind = ind & _ind.astype(bool)
+            blobs.append(d)
+        if (zone is not None):
+            _ind = self.zoneSearch(zone[0], zone[1], zone[2], zone[3], outtype=1)
+            ind = ind & _ind
+        elif (cone is not None) and (zone is not None):  # cone + zone
+            ra, dec, r = cone
+            ind, d = self.coneSearch(ra, dec, r, outtype=2)
+            ind = ind & self.zoneSearch(zone[0], zone[1], zone[2], zone[3], outtype=2)
+            d = d[ind]
+            ind = np.where(ind)
+            blobs.append(d)
+
+        return ind, blobs[0]
+
+    def selectWhere(self, fields, condition=None, condvars=None, cone=None, zone=None, **kwargs):
+        """ Read table data fulfilling the given `condition`.
+            Only the rows fulfilling the `condition` are included in the result.
+            conesearch is also possible through the keyword cone formatted as (ra, dec, r)
+            zonesearch is also possible through the keyword zone formatted as (ramin, ramax, decmin, decmax)
+
+            Combination of multiple selections is also available.
+        """
+        ind, blobs = self.where(condition, condvars, cone, zone, **kwargs)
+        tab = self.select(fields, indices=ind)
+
+        if cone is not None:
+            tab.add_column('separation', np.asarray(blobs), unit='degree')
+
+        if self._ra_name in tab:
+            tab.set_RA(self._ra_name)
+
+        if self._dec_name in tab:
+            tab.set_DEC(self._dec_name)
+
+        return tab
+
+
 class stats(object):
-    """ Namespace of some functions """
     @classmethod
     def has_nan(s, v):
         return (True in np.isnan(v))
@@ -2029,42 +2694,43 @@ class stats(object):
     @classmethod
     def mean(s, v):
         return np.nanmean(v)
-    mean.__func__.__doc__ = np.nanmean.__doc__
 
     @classmethod
     def max(s, v):
         return np.nanmax(v)
-    max.__func__.__doc__ = np.nanmax.__doc__
 
     @classmethod
     def min(s, v):
         return np.nanmin(v)
-    min.__func__.__doc__ = np.nanmin.__doc__
 
     @classmethod
     def std(s, v):
         return np.nanstd(v)
-    std.__func__.__doc__ = np.nanstd.__doc__
 
     @classmethod
     def var(s, v):
         return np.var(v)
-    var.__func__.__doc__ = np.nanvar.__doc__
 
     @classmethod
     def p16(s, v):
-        return np.nanpercentile(v, 16)
-    p16.__func__.__doc__ = np.nanpercentile.__doc__
+        try:
+            return np.nanpercentile(v, 16)
+        except AttributeError:
+            return np.percentile(v, 16)
 
     @classmethod
     def p84(s, v):
-        return np.nanpercentile(v, 84)
-    p84.__func__.__doc__ = np.nanpercentile.__doc__
+        try:
+            return np.nanpercentile(v, 84)
+        except AttributeError:
+            return np.percentile(v, 84)
 
     @classmethod
     def p50(s, v):
-        return np.nanmedian(v)
-    p50.__func__.__doc__ = np.nanpercentile.__doc__
+        try:
+            return np.nanmedian(v)
+        except AttributeError:
+            return np.percentile(v, 50)
 
 
 # =============================================================================
@@ -2140,11 +2806,17 @@ try:
 
         return _fn(*_args, **kwargs)
 
-    def attached_function(fn, doc=None):
+    def attached_function(fn, doc=None, errorlevel=0):
         """ eclare a function as a method to the class table"""
 
         def _fn(self, *args, **kwargs):
-            return plot_function(self, fn, *args, **kwargs)
+            try:
+                return plot_function(self, fn, *args, **kwargs)
+            except Exception as e:
+                if errorlevel < 1:
+                    pass
+                else:
+                    raise e
 
         if doc is not None:
             _fn.__doc__ = doc
@@ -2157,8 +2829,12 @@ try:
     SimpleTable.hist2d = attached_function('hist2d', plt.hist2d.__doc__)
     SimpleTable.hexbin = attached_function('hexbin', plt.hexbin.__doc__)
     SimpleTable.scatter = attached_function('scatter', plt.scatter.__doc__)
-    SimpleTable.violinplot = attached_function('violinplot', plt.violinplot.__doc__)
-    SimpleTable.boxplot = attached_function('boxplot', plt.boxplot.__doc__)
+
+    # newer version of matplotlib
+    if hasattr(plt, 'violinplot'):
+        SimpleTable.violinplot = attached_function('violinplot', plt.violinplot.__doc__)
+    if hasattr(plt, 'boxplot'):
+        SimpleTable.boxplot = attached_function('boxplot', plt.boxplot.__doc__)
 
 except Exception as e:
     print(e)
