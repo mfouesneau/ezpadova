@@ -15,13 +15,14 @@ if sys.version_info[0] > 2:
     from urllib import request
     from urllib.request import urlopen
     from io import StringIO, BytesIO
+    from html import parser
 else:
     py3k = False
     from urllib import urlencode
     from urllib2 import urlopen
     from StringIO import StringIO
+    import HTMLParser as parser
 
-from html import parser
 import zlib
 import re
 from .simpletable import SimpleTable as Table
