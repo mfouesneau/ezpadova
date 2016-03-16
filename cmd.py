@@ -36,6 +36,7 @@ map_interp = {
     'improved': 1
 }
 
+
 map_phot = {"2mass_spitzer": " 2MASS + Spitzer (IRAC+MIPS)",
             "2mass_spitzer_wise": " 2MASS + Spitzer (IRAC+MIPS) + WISE",
             "2mass": " 2MASS JHKs",
@@ -83,7 +84,29 @@ map_phot = {"2mass_spitzer": " 2MASS + Spitzer (IRAC+MIPS)",
             "visir": "VISIR",
             "vista": "VISTA ZYJHKs (Vegamag)",
             "washington": "Washington CMT1T2",
-            "washington_ddo51": "Washington CMT1T2 + DDO51"
+            "washington_ddo51": "Washington CMT1T2 + DDO51",
+            "ogle_2mass_spitzer": " OGLE + 2MASS + Spitzer (IRAC+MIPS)",
+            "2mass_spitzer_wise_washington_ddo51": "2MASS+Spitzer+WISE+Washington+DDO51",
+            "megacam_wircam": "CFHT Megacam + Wircam (all ABmags)",
+            "wircam": "CFHT Wircam",
+            "ciber": "CIBER",
+            "decam": "DECAM (ABmags)",
+            "decam_vista": "DECAM ugrizY (ABmags) + VISTA ZYJHK_s (Vegamags)",
+            "gaia": "Gaia's G, G_BP and G_RP (Vegamags)",
+            "wfc3_wideverywide": "HST/WFC3 all W+LP+X filters (UVIS1+IR, final throughputs)",
+            "wfc3_verywide": "HST/WFC3 long-pass and extremely wide filters (UVIS1, final throughputs)",
+            "wfc3_wide": "HST/WFC3 wide filters (UVIS1+IR, final throughputs)",
+            "int_wfc": "INT/WFC (Vegamag)",
+            "iphas": "IPHAS",
+            "lbt_lbc": "LBT/LBC (Vegamag)",
+            "lsst": "LSST ugrizY, March 2012 total filter throughputs (all ABmags)",
+            "noao_ctio_mosaic2": "NOAO/CTIO/MOSAIC2 (Vegamag)",
+            "TESS_2mass_kepler": "TESS + 2MASS (Vegamags) + Kepler + SDSS griz + DDO51 (in ABmags)",
+            "ukidss": "UKIDSS ZYJHK (Vegamag)",
+            "vphas": "VPHAS+ (ABmags)",
+            "vst_omegacam": "VST/OMEGACAM (ABmag)",
+            "vilnius": "Vilnius",
+            "jwst_wide": "planned JWST wide filters"
             }
 
 
