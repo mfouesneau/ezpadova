@@ -14,13 +14,15 @@ if sys.version_info[0] > 2:
     from urllib.parse import urlencode
     from urllib import request
     from urllib.request import urlopen
-    from io import StringIO, BytesIO
+    from html import parser
 else:
     py3k = False
     from urllib import urlencode
     from urllib2 import urlopen
-    #from StringIO import StringIO
-    from io import StringIO, BytesIO
+    import HTMLParser as parser
+
+
+from io import StringIO, BytesIO
 import zlib
 import re
 from .simpletable import SimpleTable as Table
@@ -283,6 +285,22 @@ def __get_url_args(model=None, carbon=None, interp=None, Mstars=None,
     return d
 
 
+class __CMD_Error_Parser(parser.HTMLParser):
+    """ find error box in the recent version of CMD website """
+    def handle_starttag(self, tag, attrs):
+        if (tag == "p") & (dict(attrs).get('class', None) == 'errorwarning'):
+            self._record = True
+            self.data = []
+
+    def handle_endtag(self, tag):
+        if (tag == "p") & getattr(self, '_record', False):
+            self._record = False
+
+    def handle_data(self, data):
+        if getattr(self, '_record', False):
+            self.data.append(data)
+
+
 def __query_website(d):
     """ Communicate with the CMD website """
     webserver = 'http://stev.oapd.inaf.it'
@@ -308,7 +326,12 @@ def __query_website(d):
             r = zlib.decompress(bytes(r), 15 + 32)
         return r
     else:
-        print(c)
+        # print(c)
+        print(url + q)
+        if "errorwarning" in c:
+            p = __CMD_Error_Parser()
+            p.feed(c)
+            print('\n', '\n'.join(p.data).strip())
         raise RuntimeError('Server Response is incorrect')
 
 
