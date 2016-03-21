@@ -363,7 +363,7 @@ def __convert_to_Table(resp, dic=None):
 
     def find_data(txt, comment='#'):
         for num, line in enumerate(txt.split('\n')):
-            if line[0] != comment and len(line[0].replace(' ', '')) > 0:
+            if line[0] != comment:
                 return num
 
     _r = resp.decode('utf8')
