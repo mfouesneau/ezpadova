@@ -38,6 +38,7 @@ EXAMPLE USAGE
 
 Available model interfaces
 --------------------------
+`parsec12s_r14`: PARSEC version 1.2S + TP-AGB tracks from COLIBRI (Marigo et al. (2013)), version PR16 (Rosenfield et al. (2016)).
 
 `parsec12s`: PARSEC version 1.2S,  Tang et al. (2014),  Chen et al. (2014)
 
@@ -60,8 +61,10 @@ for low-mass, low-metallicity AGB tracks
 simplified TP-AGB (for M <= 7 Msun) + Bertelli et al.  (1994) (for M > 7 Msun) +
 additional Z=0.0001 and Z=0.001 tracks.
 
-Photometric systems
+Photometric systems 
 -------------------
+(incomplete list)
+
 
 `2mass_spitzer`:  2MASS + Spitzer (IRAC+MIPS)
 
