@@ -14,15 +14,15 @@ if sys.version_info[0] > 2:
     from urllib.parse import urlencode
     from urllib import request
     from urllib.request import urlopen
-    from io import StringIO, BytesIO
     from html import parser
 else:
     py3k = False
     from urllib import urlencode
     from urllib2 import urlopen
-    from StringIO import StringIO
     import HTMLParser as parser
 
+
+from io import StringIO, BytesIO
 import zlib
 import re
 from .simpletable import SimpleTable as Table
@@ -35,6 +35,7 @@ map_interp = {
     'default': 0,
     'improved': 1
 }
+
 
 map_phot = {"2mass_spitzer": " 2MASS + Spitzer (IRAC+MIPS)",
             "2mass_spitzer_wise": " 2MASS + Spitzer (IRAC+MIPS) + WISE",
@@ -83,7 +84,29 @@ map_phot = {"2mass_spitzer": " 2MASS + Spitzer (IRAC+MIPS)",
             "visir": "VISIR",
             "vista": "VISTA ZYJHKs (Vegamag)",
             "washington": "Washington CMT1T2",
-            "washington_ddo51": "Washington CMT1T2 + DDO51"
+            "washington_ddo51": "Washington CMT1T2 + DDO51",
+            "ogle_2mass_spitzer": " OGLE + 2MASS + Spitzer (IRAC+MIPS)",
+            "2mass_spitzer_wise_washington_ddo51": "2MASS+Spitzer+WISE+Washington+DDO51",
+            "megacam_wircam": "CFHT Megacam + Wircam (all ABmags)",
+            "wircam": "CFHT Wircam",
+            "ciber": "CIBER",
+            "decam": "DECAM (ABmags)",
+            "decam_vista": "DECAM ugrizY (ABmags) + VISTA ZYJHK_s (Vegamags)",
+            "gaia": "Gaia's G, G_BP and G_RP (Vegamags)",
+            "wfc3_wideverywide": "HST/WFC3 all W+LP+X filters (UVIS1+IR, final throughputs)",
+            "wfc3_verywide": "HST/WFC3 long-pass and extremely wide filters (UVIS1, final throughputs)",
+            "wfc3_wide": "HST/WFC3 wide filters (UVIS1+IR, final throughputs)",
+            "int_wfc": "INT/WFC (Vegamag)",
+            "iphas": "IPHAS",
+            "lbt_lbc": "LBT/LBC (Vegamag)",
+            "lsst": "LSST ugrizY, March 2012 total filter throughputs (all ABmags)",
+            "noao_ctio_mosaic2": "NOAO/CTIO/MOSAIC2 (Vegamag)",
+            "TESS_2mass_kepler": "TESS + 2MASS (Vegamags) + Kepler + SDSS griz + DDO51 (in ABmags)",
+            "ukidss": "UKIDSS ZYJHK (Vegamag)",
+            "vphas": "VPHAS+ (ABmags)",
+            "vst_omegacam": "VST/OMEGACAM (ABmag)",
+            "vilnius": "Vilnius",
+            "jwst_wide": "planned JWST wide filters"
             }
 
 
@@ -93,7 +116,8 @@ def help_phot():
 
 # available tracks
 map_models = {
-    'parsec12s': ('parsec_CAF09_v1.2S', 'PARSEC version 1.2S,  Tang et al. (2014),  Chen et al. (2014)'),
+    'parsec12s_r14': ('parsec_CAF09_v1.2S_NOV13', 'PARSEC version 1.2S Bressan et al. (2012), Tang et al. (2014),  Chen et al. (2014) with COLIBRI TP-AGB Marigo et al. (2013), Rosenfield et al. (2014, 2016)'),
+    'parsec12s': ('parsec_CAF09_v1.2S', 'PARSEC version 1.2S,  Bressan et al. (2012), Tang et al. (2014),  Chen et al. (2014)'),
     'parsec11': ('parsec_CAF09_v1.1', 'PARSEC version 1.1, With revised diffusion+overshooting in low-mass stars, and improvements in interpolation scheme.'),
     'parsec10': ('parsec_CAF09_v1.0', 'PARSEC version 1.0'),
     '2010': ('gi10a',  'Marigo et al. (2008) with the Girardi et al. (2010) Case A correction for low-mass, low-metallicity AGB tracks'),
@@ -304,7 +328,7 @@ def __query_website(d):
     """ Communicate with the CMD website """
     webserver = 'http://stev.oapd.inaf.it'
     print('Interrogating {0}...'.format(webserver))
-    # url = webserver + '/cgi-bin/cmd_2.3'
+    # url = webserver + '/cgi-bin/cmd_2.8'
     url = webserver + '/cgi-bin/cmd'
     q = urlencode(d)
     # print('Query content: {0}'.format(q))
@@ -334,7 +358,7 @@ def __query_website(d):
         raise RuntimeError('Server Response is incorrect')
 
 
-def __convert_to_Table(r, d=None):
+def __convert_to_Table(resp, dic=None):
     """ Make a table from the string response content of the website """
 
     def find_data(txt, comment='#'):
@@ -342,19 +366,14 @@ def __convert_to_Table(r, d=None):
             if line[0] != comment:
                 return num
 
-    if py3k:
-        _r = r.decode('utf8')
-        start = find_data(_r) - 1
-        _r = '\n'.join(_r.split('\n')[start:])[1:].encode('utf8')
-        bf = BytesIO(_r)
-    else:
-        start = find_data(_r) - 1
-        _r = '\n'.join(_r.split('\n')[start:])[1:]
-        bf = StringIO(r)
-    t = Table(bf, dtype='tsv', names=True, comments='#')
-    if d is not None:
-        for k, v in d.items():
-            t.header[k] = v
+    _r = resp.decode('utf8')
+    start = find_data(_r) - 1
+    _r = '\n'.join(_r.split('\n')[start:])[1:].encode('utf8')
+    bf = BytesIO(_r)
+    tab = Table(bf, dtype='tsv', names=True, comments='#')
+    if dic is not None:
+        for k, v in dic.items():
+            tab.header[k] = v
 
     # make some aliases
     aliases = (('logA', 'logageyr'),
@@ -363,9 +382,9 @@ def __convert_to_Table(r, d=None):
                ('logg', 'logG'))
 
     for a, b in aliases:
-        t.set_alias(a, b)
+        tab.set_alias(a, b)
 
-    return t
+    return tab
 
 
 def get_one_isochrone(age, metal, ret_table=True, **kwargs):
