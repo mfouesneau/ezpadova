@@ -109,6 +109,7 @@
 		"2": ["Sequence of isochrones at constant t (variable Z)", "Groenewegen (2006)"]
 	},
 	"__def_args__": {
+		"inTPC": 10,
 		"binary_frac": 0.3,
 		"binary_kind": 1,
 		"binary_mrinf": 0.7,
@@ -125,7 +126,7 @@
 		"isoc_age0": 12.7e9,
 		"isoc_dlage": 0.05,
 		"isoc_dz": 0.0001,
-		"isoc_kind": "parsec_CAF09_v1.2S",
+		"isoc_kind": "parsec_CAF09_v1.2S_NOV13",
 		"isoc_lage0": 6.6,
 		"isoc_lage1": 10.13,
 		"isoc_val": 0,
