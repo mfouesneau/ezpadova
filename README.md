@@ -33,7 +33,7 @@ EXAMPLE USAGE
 
 * getting only one isochrone
 ```python 
->>> r = cmd.get_one_isochrones(1e7, 0.02, model='parsec12s', phot='spitzer')
+>>> r = cmd.get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
 ```
 
 Available model interfaces
