@@ -12,7 +12,7 @@ setup(name = "ezpadova",
     author_email = "",
     url = "https://github.com/mfouesneau/ezpadova",
     packages = find_packages(),
-    package_data = {},
+    package_data = {'ezpadova':['*.json']},
     include_package_data = True,
     classifiers=[
       'Development Status :: 3 - Alpha',
