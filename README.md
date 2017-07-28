@@ -12,11 +12,18 @@ This package has been tested on python 2.7 and python 3.
 :version: 1
 :author: MF
 
+Installation
+------------
+Install with pip
 
-TODO list
----------
-* make a full documentation
-* cleanup the mess
+pip install git+git://github.com/mfouesneau/ezpadova
+(--user if you want to install it in your user profile)
+
+Manual installation
+
+download the repository and run the setup
+
+python setup.py install
 
 
 EXAMPLE USAGE
@@ -24,7 +31,7 @@ EXAMPLE USAGE
 
 * Basic example of downloading a sequence of isochrones, plotting, saving
 ```python 
->>> r = cmd.get_t_isochrones(6.0, 7.0, 0.05, 0.02)
+>>> r = parsec.get_t_isochrones(6.0, 7.0, 0.05, 0.02)
 >>> import pylab as plt
 >>> plt.scatter(r['logT'], r['logL'], c=r['logA'], edgecolor='None')
 >>> plt.show()
