@@ -60,13 +60,15 @@ def get_photometry_list():
             self.name = None
             self.lst = []
             self.current = []
+
         def handle_starttag(self, tag, attrs):
             # print(tag)
             if 'select' in tag:
                 self.name = [k[1] for k in attrs if k[0] == 'name'][0]
-                print("SELECT FOUND: ", self.name)
+                # print("SELECT FOUND: ", self.name)
             if 'option' in tag:
                 self.current.append(attrs[0][1])
+
         def handle_endtag(self, tag):
             if 'select' in tag:
                 self.data[self.name] = self.lst
@@ -76,6 +78,7 @@ def get_photometry_list():
                 self.current = [self.current[0], ''.join(self.current[1:])]
                 self.lst.append(self.current)
                 self.current = []
+
         def handle_data(self, data):
             if len(data) < 2:
                 return
@@ -290,7 +293,11 @@ def __convert_to_Table(resp, dic=None):
                ('logg', 'logG'))
 
     for a, b in aliases:
-        tab.set_alias(a, b)
+        try:
+            tab.set_alias(a, b)
+        except KeyError:
+            print('Error setting alias {0}->{1}'.format(a, b))
+
 
     return tab
 
