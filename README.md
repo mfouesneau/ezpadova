@@ -43,7 +43,7 @@ EXAMPLE USAGE
 
 * getting only one isochrone
 ```python 
->>> r = pasec.get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
+>>> r = parsec.get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
 ```
 
 Available model interfaces
