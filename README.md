@@ -30,17 +30,20 @@ EXAMPLE USAGE
 -------------
 
 * Basic example of downloading a sequence of isochrones, plotting, saving
-```python 
+```python
+>>> from ezpadova import parsec
 >>> r = parsec.get_t_isochrones(6.0, 7.0, 0.05, 0.02)
+
 >>> import pylab as plt
 >>> plt.scatter(r['logT'], r['logL'], c=r['logA'], edgecolor='None')
 >>> plt.show()
+
 >>> r.write('myiso.fits')
 ```
 
 * getting only one isochrone
 ```python 
->>> r = cmd.get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
+>>> r = pasec.get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
 ```
 
 Available model interfaces
