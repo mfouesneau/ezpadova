@@ -86,6 +86,8 @@ def get_photometry_list():
                 self.current.append(data.replace('\n', ' '))
 
     data = urlopen(webserver + '/cgi-bin/cmd').read().decode('utf8')
+    data = data.replace("option selected value", "option value")
+    # this is to solve the "option selected value" bug
     p = Parser()
     p.feed(data)
     phot_list = p.data['photsys_file'][1:]   # first one is a list
