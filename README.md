@@ -16,14 +16,16 @@ Installation
 ------------
 Install with pip
 
+```
 pip install git+git://github.com/mfouesneau/ezpadova
-(--user if you want to install it in your user profile)
+```
+(`--user` if you want to install it in your user profile)
 
 Manual installation
 
 download the repository and run the setup
 
-python setup.py install
+```python setup.py install```
 
 
 EXAMPLE USAGE
