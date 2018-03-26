@@ -340,7 +340,7 @@ def __query_website(d):
     aa = re.compile('output\d+')
     fname = aa.findall(c)
     if len(fname) > 0:
-        url = '{0}/~lgirardi/tmp/{1}.dat'.format(webserver, fname[0])
+        url = '{0}/tmp/{1}.dat'.format(webserver, fname[0])
         print('Downloading data...{0}'.format(url))
         bf = urlopen(url)
         r = bf.read()
