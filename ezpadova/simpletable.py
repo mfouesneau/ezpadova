@@ -527,7 +527,14 @@ def _ascii_read_header(fname, comments='#', delimiter=None, commentedHeader=True
         stream.seek(stream.tell() - len(line))
         nlines = 0  # make sure the value is set to the current position
 
-    return nlines, header, units, desc, alias, names
+    _names = []
+    for name in names:
+        try:
+            _names.append(name.decode())
+        except AttributeError:
+            _names.append(name)
+
+    return nlines, header, units, desc, alias, _names
 
 
 def _hdf5_write_data(filename, data, tablename=None, mode='w', append=False,
@@ -1450,11 +1457,12 @@ class SimpleTable(object):
                 kwargs.setdefault('names', names)
                 if _pd is not None:   # pandas is faster
                     kwargs.setdefault('delimiter', '\s+')
-                    kwargs.setdefault('comment', '#')
+                    kwargs.setdefault('comment', kwargs.pop('comments', '#')) #inconsistent API numpy vs. pandas
+                    kwargs.setdefault('skiprows', n + 1)  # names
                     self.data = _pd.read_csv(fname, *args, **kwargs).to_records()
                 else:
                     kwargs.setdefault('delimiter', None)
-                    kwargs.setdefault('comments', '#')
+                    kwargs.setdefault('comments', kwargs.pop('comment', '#')) #inconsistent API numpy vs. pandas
                     kwargs.setdefault('skip_header', n)
                     self.data = np.recfromtxt(fname, *args, **kwargs)
                 self.header = header
@@ -1524,6 +1532,8 @@ class SimpleTable(object):
                 self.header['NAME'] = 'No Name'
             else:
                 self.header['NAME'] = fname
+
+        self._clean_orphan_aliases()
 
     def pprint_entry(self, num, keys=None):
         """ print one line with key and values properly to be readable
@@ -1897,6 +1907,10 @@ class SimpleTable(object):
             raise KeyError("Column {0:s} does not exist".format(colname))
         self._aliases[alias] = colname
 
+    def _clean_orphan_aliases(self):
+        """ Make sure remaining aliases are all correctly links to some data """
+        self._aliases = {k:v for k,v in self._aliases.items() if v in self.data.dtype.names}
+
     def reverse_alias(self, colname):
         """
         Return aliases of a given column.
@@ -1964,7 +1978,7 @@ class SimpleTable(object):
             for k, v in zip(colname, comment):
                 self._desc[self.resolve_alias(k)] = str(v)
 
-    def keys(self, regexp=None, full_match=False):
+    def keys(self, regexp=None, full_match=False, skip_aliases=False):
         """
         Return the data column names or a subset of it
 
@@ -1975,6 +1989,9 @@ class SimpleTable(object):
 
         full_match: bool
             if set, use :func:`re.fullmatch` instead of :func:`re.match`
+
+        skip_aliases: bool
+            include aliases if unset
 
         Try to apply the pattern at the start of the string, returning
         a match object, or None if no match was found.
@@ -1999,7 +2016,10 @@ class SimpleTable(object):
             else:
                 _re = [regexp]
 
-            lbls = self.colnames + tuple(self._aliases.keys())
+            lbls = self.colnames 
+            if not skip_aliases:
+                lbls += tuple(self._aliases.keys())
+
             _keys = []
             for _rk in _re:
                 _keys += [k for k in lbls if (fn(_rk, k) is not None)]

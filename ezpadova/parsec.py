@@ -282,14 +282,16 @@ def __convert_to_Table(resp, dic=None):
     start = find_data(_r) - 1
     _r = '\n'.join(_r.split('\n')[start:])[1:].encode('utf8')
     bf = BytesIO(_r)
-    tab = Table(bf, dtype='tsv', names=True, comments='#')
+    tab = Table(bf, dtype='tsv', comment='#')
     if dic is not None:
         for k, v in dic.items():
             tab.header[k] = v
 
     # make some aliases
     aliases = (('logA', 'logageyr'),
+               ('logA', 'log(age/yr)'),
                ('logL', 'logLLo'),
+               ('logL', 'logL/Lo'),
                ('logT', 'logTe'),
                ('logg', 'logG'))
 
@@ -297,7 +299,8 @@ def __convert_to_Table(resp, dic=None):
         try:
             tab.set_alias(a, b)
         except KeyError:
-            print('Error setting alias {0}->{1}'.format(a, b))
+            pass
+            # print('Error setting alias {0}->{1}'.format(a, b))
 
 
     return tab
