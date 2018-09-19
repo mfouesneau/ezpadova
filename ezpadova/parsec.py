@@ -153,7 +153,7 @@ def file_type(filename, stream=False):
 # --------------------
 
 def __get_url_args(model=None, carbon=None, interp=None, Mstars=None,
-                   Cstars=None, dust=None, phot=None, **kwargs):
+                   Cstars=None, phot=None, **kwargs):
     """ Update options in the URL query using internal shortcuts
 
     Parameters
@@ -167,9 +167,6 @@ def __get_url_args(model=None, carbon=None, interp=None, Mstars=None,
 
     interp: str
         interpolation scheme
-
-    dust: str
-        circumstellar dust prescription :func:`help_circumdust`
 
     Mstars: str
         dust on M stars :func:`help_circumdust`
@@ -200,9 +197,6 @@ def __get_url_args(model=None, carbon=None, interp=None, Mstars=None,
 
     if interp is not None:
         d['kind_interp'] = map_interp[interp]
-
-    if dust is not None:
-        d['dust_source'] = map_circum_Mstars[dust]
 
     if Cstars is not None:
         d['dust_sourceC'] = map_circum_Cstars[Cstars]
@@ -333,9 +327,6 @@ def get_one_isochrone(age, metal, ret_table=True, **kwargs):
     interp: str
         interpolation scheme
 
-    dust: str
-        circumstellar dust prescription :func:`help_circumdust`
-
     Mstars: str
         dust on M stars :func:`help_circumdust`
 
@@ -391,9 +382,6 @@ def get_Z_isochrones(z0, z1, dz, age, ret_table=True, **kwargs):
 
     interp: str
         interpolation scheme
-
-    dust: str
-        circumstellar dust prescription :func:`help_circumdust`
 
     Mstars: str
         dust on M stars :func:`help_circumdust`
@@ -452,9 +440,6 @@ def get_t_isochrones(logt0, logt1, dlogt, metal, ret_table=True, **kwargs):
 
     interp: str
         interpolation scheme
-
-    dust: str
-        circumstellar dust prescription :func:`help_circumdust`
 
     Mstars: str
         dust on M stars :func:`help_circumdust`
