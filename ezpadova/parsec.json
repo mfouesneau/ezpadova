@@ -88,39 +88,36 @@
 	},
 	"map_carbon_stars" : {
 		"loidl": ["loidl01", "Loidl et al. (2001) (as in Marigo et al. (2008) and Girardi et al. (2008))"],
-		"aringer": ["aringer09", "Aringer et al. (2009) (Note: The interpolation scheme has been slightly improved w.r.t. to the paper's Fig. 19."] 
+		"aringer": ["aringer09", "Aringer et al. (2009) (Note: The interpolation scheme has been slightly improved w.r.t. to the paper's Fig. 19."]
 	},
 	"map_circum_Mstars": {
-		"nodustM": ["no dust", ""],
-		"sil": ["Silicates", "Bressan et al. (1998)"],
-		"AlOx": ["100% AlOx", "Groenewegen (2006)"],
-		"dpmod60alox40": ["60% Silicate + 40% AlOx", "Groenewegen (2006)"],
-		"dpmod": ["100% Silicate", "Groenewegen (2006)"]
+		"nodustM": ["nodustM", "no dust"],
+		"sil": ["sil", "Silicates as in Bressan et al. (1998)"],
+		"AlOx": ["AlOx", "100% AlOx as in Groenewegen (2006)"],
+		"dpmod60alox40": ["dpmod60alox40", "60% Silicate + 40% AlOx as in Groenewegen (2006)"],
+		"dpmod": ["dpmod", "100% Silicate as in Groenewegen (2006)"],
+		"Rouleau13_jan17": ["Rouleau13_jan17", "M+C Model: Rouleau & Martin (1991) logεS=-13 (see Nanni et al. (2016))"],
+		"Jaeger400_12_jan17": ["Jaeger400_12_jan17", "M+C Model: Jaeger et al. (1998) 400K, logεS=-12 (see Nanni et al. (2016))"],
+		"Rouleau12_mar17": ["Rouleau12_mar17", "M+C Model: Rouleau & Martin (1991) logεS=-12 (see Nanni et al. (2016))"]
 	},
 	"map_circum_Cstars": {
-		"nodustC": ["no dust", ""],
-		"gra": ["Graphites", "Bressan et al. (1998)"],
-		"AMC": ["100% AMC", "Groenewegen (2006)"],
-		"AMCSIC15": ["85% AMC + 15% SiC", "Groenewegen (2006)"]
+		"nodustC": ["nodustC", "no dust"],
+		"gra": ["gra", "Graphites as in Bressan et al. (1998)"],
+		"AMC": ["AMC", "100% AMC as in Groenewegen (2006)"],
+		"AMCSIC15": ["AMCSIC15", "85% AMC + 15% SiC as in Groenewegen (2006)"]
 	},
 	"map_isoc_val" : {
-		"0": ["Single isochrone", ""],
-		"1": ["Sequence of isochrones at constant Z", ""],
-		"2": ["Sequence of isochrones at constant t (variable Z)", "Groenewegen (2006)"]
+		"0": [0, "Single isochrone"],
+		"1": [1, "Sequence of isochrones at constant Z"],
+		"2": [2, "Sequence of isochrones at constant t (variable Z)"]
 	},
 	"__def_args__": {
-		"inTPC": 10,
-		"binary_frac": 0.3,
-		"binary_kind": 1,
-		"binary_mrinf": 0.7,
-		"binary_mrsup": 1,
-		"cmd_version": 2.3,
-		"dust_source": "nodust",
-		"dust_sourceC": "AMCSIC15",
-		"dust_sourceM": "dpmod60alox40",
+		"n_inTPC": 10,
+		"cmd_version": 2.9,
+		"dust_sourceC": "nodustC",
+		"dust_sourceM": "nodustM",
 		"eta_reimers": 0.2,
 		"extinction_av": 0,
-		"icm_lim": 4,
 		"imf_file": "tab_imf/imf_chabrier_lognormal.dat",
 		"isoc_age": 1e7,
 		"isoc_age0": 12.7e9,
@@ -140,12 +137,10 @@
 		"kind_mag": 2,
 		"kind_postagb": -1,
 		"kind_pulsecycle": 0,
-		"kind_tpagb": 3,
+		"kind_tpagb": 0,
 		"lf_deltamag": 0.2,
 		"lf_maginf": 20,
 		"lf_magsup": -20,
-		"mag_lim": 26,
-		"mag_res": 0.1,
 		"output_evstage": 0,
 		"output_gzip": 0,
 		"output_kind": 0,
