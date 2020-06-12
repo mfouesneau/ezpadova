@@ -276,7 +276,8 @@ def _fits_generate_header(tab):
     for k, v in tab.header.items():
         if (v not in ['', 'None', None]) & (k != 'NAME'):
             if (k != 'COMMENT') & (k != 'HISTORY'):
-                hdr.update(k, v)
+                # hdr.update(k, v)
+                hdr[k] = v
             else:
                 txt = v.split('\n')
                 for j in txt:
@@ -747,7 +748,7 @@ def _ascii_generate_header(tab, comments='#', delimiter=' ',
     length = max(map(len, tab.header.keys()))
     fmt = '{{0:s}} {{1:{0:d}s}}\t{{2:s}}'.format(length)
     for k, v in tab.header.items():
-        for vk in v.split('\n'):
+        for vk in str(v).split('\n'):
             if len(vk) > 0:
                 hdr.append(fmt.format(comments, k.upper(), vk.strip()))
 
