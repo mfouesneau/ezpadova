@@ -31,9 +31,8 @@ import json
 from .simpletable import SimpleTable as Table
 
 
-localpath = '/'.join(os.path.abspath(inspect.getfile(inspect.currentframe())).split('/')[:-1])
-
-with open(localpath + '/parsec.json') as f:
+base_directory = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(base_directory, 'parsec.json')) as f:
     _cfg = json.load(f)
     map_carbon_stars = _cfg["map_carbon_stars"]
     map_phot = _cfg["map_phot"]
