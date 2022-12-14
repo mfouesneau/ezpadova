@@ -51,9 +51,10 @@ import types
 try:
     from astropy.io import fits as pyfits
 except ImportError:
-    import pyfits
-except:
-    pyfits = None
+    try:
+        import pyfits
+    except ImportError:
+        pyfits = None
 
 try:
     import tables
@@ -1711,7 +1712,7 @@ class SimpleTable(object):
 
         Parameters
         ----------
-        data : ndarray 
+        data : ndarray
             (structured dtype), list of tuples, dict, or DataFrame
         keys: sequence, optional
             ordered subset of columns to export
@@ -2017,7 +2018,7 @@ class SimpleTable(object):
             else:
                 _re = [regexp]
 
-            lbls = self.colnames 
+            lbls = self.colnames
             if not skip_aliases:
                 lbls += tuple(self._aliases.keys())
 
