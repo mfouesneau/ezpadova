@@ -1,0 +1,62 @@
+[project]
+name = "ezpadova"
+version = "2.0"
+description = "A python package that allows you to download PADOVA/PARSEC isochrones directly from their website"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "requests",
+    "pandas",
+]
+authors = [{name="Morgan Fouesneau"}]
+classifiers=[
+      'Development Status :: 4 - Beta',
+      'Intended Audience :: Science/Research',
+      'Operating System :: OS Independent',
+      'Programming Language :: Python',
+      'Topic :: Scientific/Engineering :: Astronomy'
+      ]
+
+[build-system]
+requires = ["setuptools>=60",
+            "setuptools-scm>=6.2",
+            "wheel",
+            ]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# By default, include-package-data is true in pyproject.toml, so you do
+# NOT have to specify this line.
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]                  # list of folders that contain the packages (["."] by default)
+include = ["ezpadova*"]          # package names should match these glob patterns (["*"] by default)
+exclude = ["ezpadova.tests*"]    # exclude packages matching these glob patterns (empty by default)
+namespaces = true                # to disable scanning PEP 420 namespaces (true by default)
+
+[tool.setuptools.package-data]
+# Examples
+# "*" = ["*.txt"]
+#my_package = ["*.txt", "*.rst"]
+#my_package.data = ["*.txt", "*.rst"]  # for subfolder of my_package
+ezpadova = ['*.json']
+
+[project.optional-dependencies]
+
+testing = [
+    "pytest",
+    "pytest-doctestplus",
+    "ruff",
+    "codecov",
+    "pytest-cov"]
+
+ci = [
+  "toml",
+  "ruff",
+  "isort"]
+
+docs = [
+  "sphinx",
+  "sphinx-automodapi",
+  "numpydoc"]

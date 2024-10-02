@@ -1,4 +1,4 @@
-""" This file implements a Table class
+r""" This file implements a Table class
     that is designed to be the basis of any format
 
 Requirements
