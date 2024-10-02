@@ -225,11 +225,8 @@ def __query_website(d):
     # url = webserver + '/cgi-bin/cmd'
     q = urlencode(d)
     # print('Query content: {0}'.format(q))
-    if py3k:
-        req = request.Request(url, q.encode('utf8'))
-        c = urlopen(req).read().decode('utf8')
-    else:
-        c = urlopen(url, q).read()
+    req = request.Request(url, q.encode('utf8'))
+    c = urlopen(req).read().decode('utf8')
     aa = re.compile('output\d+')
     fname = aa.findall(c)
     if len(fname) > 0:
