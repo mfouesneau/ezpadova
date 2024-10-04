@@ -1,6 +1,6 @@
 """Deprecated functions from previous version that are kept here for backward compatibility."""
 
-from .newparsec import get_isochrones
+from .parsec import get_isochrones
 from .tools import deprecated_replacedby
 import pandas as pd
 
