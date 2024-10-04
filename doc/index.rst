@@ -29,12 +29,6 @@ New in version 2.0
 
 Available photometric systems, parameters, and default values: :ref:`parsec parameters`
 
-TODOs
------
-
-* [ ] create and merge PR
-* [ ] make a release package
-
 
 Installation
 ------------
