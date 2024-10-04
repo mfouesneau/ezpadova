@@ -21,3 +21,6 @@ pip-log.txt
 nosetests.xml 
 .*swp*
 libs
+.DS_store
+doc/_build
+*.lock
