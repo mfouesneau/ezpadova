@@ -1,3 +1,4 @@
+""" Module for querying the CMD website and parsing the results. """
 import re
 import zlib
 from io import BufferedReader, BytesIO
@@ -20,13 +21,17 @@ def build_query(**kwargs) -> dict:
     the configuration, and modifies certain keys to match the expected format
     required by the website.
 
-    Parameters:
-    **kwargs: Arbitrary keyword arguments that will be used to update the default
-              configuration values and passed as values to the online form.
+    Parameters
+    ----------
+    kwargs : dict
+        Arbitrary keyword arguments that will be used to update the default
+        configuration values and passed as values to the online form.
 
-    Returns:
-    dict: A dictionary of updated parameters with keys modified to match the
-         website's requirements.
+    Returns
+    -------
+    dict
+        A dictionary of updated parameters with keys modified to match the
+        website's requirements.
     """
     kw = configuration["defaults"].copy()
     kw.update(kwargs)
@@ -46,17 +51,19 @@ def parse_result(
     Parses the input data and returns a pandas DataFrame.
 
     Parameters:
-    data (str | bytes | BufferedReader): The input data to be parsed. It can be a string, bytes, or a BufferedReader object.
-    comment (str): The character used to denote comment lines in the input data. Default is '#'.
+        data (str | bytes | BufferedReader): The input data to be parsed. It can be a string, bytes, or a BufferedReader object.
+        comment (str): The character used to denote comment lines in the input data. Default is '#'.
 
     Returns:
-    pd.DataFrame: A pandas DataFrame containing the parsed data. The DataFrame will have an attribute 'comment' which contains the comment lines from the input data.
+        pd.DataFrame: A pandas DataFrame containing the parsed data. The DataFrame will have an attribute 'comment' which contains the comment lines from the input data.
 
-    Notes:
-    - If the input data is a BufferedReader, it will be read and decoded as 'utf-8'.
-    - The function assumes that the header line is the first non-comment line in the input data.
-    - The DataFrame is created by reading the input data with pandas.read_csv, using whitespace as the delimiter.
-    - The comment lines from the input data are stored in the 'comment' attribute of the DataFrame.
+    .. note::
+
+        - If the input data is a BufferedReader, it will be read and decoded as 'utf-8'.
+        - The function assumes that the header line is the first non-comment line in the input data.
+        - The DataFrame is created by reading the input data with pandas.read_csv, using whitespace as the delimiter.
+        - The comment lines from the input data are stored in the 'comment' attribute of the DataFrame.
+
     """
 
     if isinstance(data, BufferedReader):
@@ -130,6 +137,36 @@ def get_isochrones(
     return_df: bool = True,
     **kwargs,
 ) -> Union[pd.DataFrame, bytes]:
+    """
+    Retrieve isochrones based on specified parameters.
+
+    Parameters:
+        age_yr (Tuple[float, float, float] | None): A triplet of
+            numbers representing the lower bound, upper bound, and step size for age
+            in years.  Either `age_yr` or `logage` must be provided, but not both.
+        Z (Tuple[float, float, float] | None): 
+            A triplet of numbers representing the lower bound, upper bound, and step size for metallicity Z.
+            Either `Z` or `MH` must be provided, but not both.
+        logage (Tuple[float, float, float] | None): 
+            A triplet of numbers representing the lower bound, upper bound, and step size for logarithmic age.
+            Either `logage` or `age_yr` must be provided, but not both.
+        MH (Tuple[float, float, float] | None): 
+            A triplet of numbers representing the lower bound, upper bound, and step size for metallicity [M/H].
+            Either `MH` or `Z` must be provided, but not both.
+        default_ranges (bool, optional):
+            If True, use the default parameter ranges. Default is False.
+        return_df (bool, optional):
+            If True, return the result as a pandas DataFrame. If False, return the raw bytes. Default is True.
+        kwargs (dict):
+            Additional keyword arguments to pass to the query.
+
+    Returns:
+        pd.DataFrame | bytes: The queried isochrones, either as a pandas DataFrame or raw bytes, depending on the value of `return_df`.
+
+    Raises:
+        ValueError: If the provided parameters are inconsistent or invalid.
+    """
+
     kw = configuration["defaults"].copy()
     kw.update(kwargs)
 

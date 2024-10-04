@@ -1,10 +1,17 @@
+""" Configuration file for the EzPadova package. 
+
+It provides functions to update the configuration from the CMD webpage and validate query parameters for isochrone generation.
+It also contains the default values for the configuration parameters.
+"""
 import os
-import re
 from typing import Tuple
 
 import requests
 import json
 from bs4 import BeautifulSoup
+
+from .tools import dedent
+
 
 # URL of the webpage
 configuration = dict(
@@ -55,62 +62,6 @@ configuration = dict(
 )
 
 
-def dedent(text: str) -> str:
-    """Remove any common leading whitespace from every line in `text`.
-
-    This can be used to make triple-quoted strings line up with the left
-    edge of the display, while still presenting them in the source code
-    in indented form.
-
-    Note that tabs and spaces are both treated as whitespace, but they
-    are not equal: the lines "  hello" and "\\thello" are
-    considered to have no common leading whitespace.
-
-    Entirely blank lines are normalized to a newline character.
-    """
-    # Look for the longest leading string of spaces and tabs common to
-    # all lines.
-    _whitespace_only_re = re.compile("^[ \t]+$", re.MULTILINE)
-    _leading_whitespace_re = re.compile("(^[ \t]*)(?:[^ \t\n])", re.MULTILINE)
-
-    margin = None
-    text = _whitespace_only_re.sub("", text)
-    indents = _leading_whitespace_re.findall(text)
-    for indent in indents:
-        if margin is None:
-            margin = indent
-
-        # Current line more deeply indented than previous winner:
-        # no change (previous winner is still on top).
-        elif indent.startswith(margin):
-            pass
-
-        # Current line consistent with and no deeper than previous winner:
-        # it's the new winner.
-        elif margin.startswith(indent):
-            margin = indent
-
-        # Find the largest common whitespace between current line and previous
-        # winner.
-        else:
-            for i, (x, y) in enumerate(zip(margin, indent)):
-                if x != y:
-                    margin = margin[:i]
-                    break
-
-    # sanity check (testing/debugging only)
-    if 0 and margin:
-        for line in text.split("\n"):
-            assert not line or line.startswith(margin), "line = %r, margin = %r" % (
-                line,
-                margin,
-            )
-
-    if margin:
-        text = re.sub(r"(?m)^" + margin, "", text)
-    return text
-
-
 def reload_configuration():
     """
     Reloads the configuration from a JSON file.
@@ -121,10 +72,14 @@ def reload_configuration():
     dictionary. If the configuration file does not exist, it calls the `update_config`
     function to create a new configuration and writes it to the 'config.json' file.
 
-    Raises:
-        FileNotFoundError: If the configuration file does not exist and `update_config`
-                           fails to create a new configuration.
-        json.JSONDecodeError: If the configuration file contains invalid JSON.
+    Raises
+    ------
+
+    FileNotFoundError: If the configuration file does not exist and `update_config`
+                        fails to create a new configuration.
+
+    json.JSONDecodeError: If the configuration file contains invalid JSON.
+
     """
     base_directory = os.path.dirname(os.path.abspath(__file__))
     config_file = os.path.join(base_directory, "parsec.json")
@@ -145,11 +100,15 @@ def _get_siblings_text(element: BeautifulSoup) -> str:
     Extracts and concatenates the text content from the sibling elements of the given BeautifulSoup element
     until another form element is encountered.
 
-    Args:
-        element (BeautifulSoup): The BeautifulSoup element whose siblings' text content is to be extracted.
+    Parameters
+    ----------
+    element: BeautifulSoup
+        The BeautifulSoup element whose siblings' text content is to be extracted.
 
-    Returns:
-        str: A single string containing the concatenated text content of the sibling elements.
+    Returns
+    -------
+    str:
+        A single string containing the concatenated text content of the sibling elements.
     """
     elements_ = []
     for sibling in element.next_siblings:
@@ -166,15 +125,21 @@ def _parse_select_info(
     """
     Parses the provided BeautifulSoup forms to extract information about select elements.
 
-    Args:
-        forms (BeautifulSoup): The BeautifulSoup object containing the forms to parse.
-        name (str): The name attribute of the select element to look for.
-        elt_class (str): The class of the elements to find within the forms.
+    Parameters
+    ----------
+    forms: BeautifulSoup
+        The BeautifulSoup object containing the forms to parse.
+    name: str
+        The name attribute of the select element to look for.
+    elt_class: str
+        The class of the elements to find within the forms.
 
-    Returns:
-        Tuple[dict, dict]: A tuple containing two dictionaries:
-            - The first dictionary has option values as keys and tuples containing the option text and option value as values.
-            - The second dictionary has the name of the select element as the key and the selected option value as the value.
+    Returns
+    -------
+    Tuple[dict, dict]:
+        A tuple containing two dictionaries:
+        - The first dictionary has option values as keys and tuples containing the option text and option value as values.
+        - The second dictionary has the name of the select element as the key and the selected option value as the value.
     """
     comps = {}
     selected = None
@@ -198,16 +163,24 @@ def _parse_radio_info(
     """
     Parses radio button information from HTML forms.
 
-    Args:
-        forms (BeautifulSoup): Parsed HTML forms.
-        name (str): The name attribute of the radio buttons to parse.
-        elt_class (str): The class of the elements to find.
-        elt_type (str): The type of the elements to find (e.g., 'radio').
+    Parameters
+    ----------
+    forms: BeautifulSoup
+        Parsed HTML forms.
+    name: str
+        The name attribute of the radio buttons to parse.
+    elt_class: str
+        The class of the elements to find.
+    elt_type: str
+        The type of the elements to find (e.g., 'radio').
 
-    Returns:
-        Tuple[dict, dict]: A tuple containing:
-            - A dictionary with the name as the key and a list of tuples (text, value) as the value.
-            - A dictionary with the name as the key and the selected value as the value.
+    Returns
+    -------
+    Tuple[dict, dict]:
+        A tuple containing:
+        - A dictionary with the name as the key and a list of tuples (text, value) as the value.
+        - A dictionary with the name as the key and the selected value as the value.
+
     """
     comps = {}
     selected = None
@@ -228,17 +201,24 @@ def _parse_text_info(
     """
     Parses text information from HTML forms.
 
-    Args:
-        forms (BeautifulSoup): The BeautifulSoup object containing the HTML forms to parse.
-        name (str): The name attribute to search for within the form elements.
-        elt_class (str): The class of the elements to find within the forms.
-        elt_type (str): The type attribute of the elements to find within the forms.
+    Parameters
+    ----------
+    forms : BeautifulSoup
+        The BeautifulSoup object containing the HTML forms to parse.
+    name : str
+        The name attribute to search for within the form elements.
+    elt_class : str
+        The class of the elements to find within the forms.
+    elt_type : str
+        The type attribute of the elements to find within the forms.
 
-    Returns:
-        Tuple[dict, dict]: A tuple containing two dictionaries:
-            - comps: A dictionary where the key is the name and the value is a list of tuples,
-                        each containing the text and value of the element.
-            - defaults: A dictionary where the key is the name and the value is the default value of the element.
+    Returns
+    -------
+    Tuple[dict, dict]
+        A tuple containing two dictionaries:
+        - comps: A dictionary where the key is the name and the value is a list of tuples,
+                 each containing the text and value of the element.
+        - defaults: A dictionary where the key is the name and the value is the default value of the element.
     """
     comps = {}
     defaults = {}
@@ -255,15 +235,22 @@ def _parse_text_info(
 def _get_photsys_info(forms: BeautifulSoup) -> Tuple[dict, dict]:
     """
     Retrieve photometric systems and their default values from the form.
+
     This function extracts photometric system information from the provided
     BeautifulSoup form object. It processes both select and radio input types
     to gather the necessary data.
-    Args:
-        forms (BeautifulSoup): A BeautifulSoup object representing the form
-                               containing photometric system information.
-    Returns:
-        Tuple[dict, dict]: A dictionary containing the photometric systems and
-                           one with their default values.
+
+    Parameters
+    ----------
+    forms : BeautifulSoup
+        A BeautifulSoup object representing the form containing photometric system information.
+
+    Returns
+    -------
+    Tuple[dict, dict]
+        A tuple containing two dictionaries:
+        - The first dictionary contains the photometric systems.
+        - The second dictionary contains their default values.
     """
     # get photometric systems
     comps_raw, defaults = _parse_select_info(forms, "photsys_file", "select")
@@ -290,17 +277,23 @@ def _get_photsys_info(forms: BeautifulSoup) -> Tuple[dict, dict]:
 def _get_model_info(forms: BeautifulSoup) -> Tuple[dict, dict]:
     """
     Retrieve model systems from the form.
+
     This function parses the provided BeautifulSoup form object to extract
     model system information. It collects radio button and text input values
     from specific form fields and aggregates them into two dictionaries:
     one for the component values and one for the default values.
-    Args:
-        forms (BeautifulSoup): The BeautifulSoup object representing the form
-                               to be parsed.
-    Returns:
-        Tuple[dict, dict]: A tuple containing two dictionaries:
-                           - comps: A dictionary with the component values.
-                           - defaults: A dictionary with the default values.
+
+    Parameters
+    ----------
+    forms : BeautifulSoup
+        The BeautifulSoup object representing the form to be parsed.
+
+    Returns
+    -------
+    Tuple[dict, dict]
+        A tuple containing two dictionaries:
+        - comps: A dictionary with the component values.
+        - defaults: A dictionary with the default values.
     """
     comps, defaults = _parse_radio_info(forms, "track_parsec", "input", "radio")
     parsed = [
@@ -326,16 +319,17 @@ def _get_mdust(forms: BeautifulSoup) -> Tuple[dict, dict]:
     containing two dictionaries: one with the components and one
     with the default values.
 
-    Args:
-        forms (BeautifulSoup): The BeautifulSoup object containing
-                               the form data to be parsed.
+    Parameters
+    ----------
+    forms : BeautifulSoup
+        The BeautifulSoup object containing the form data to be parsed.
 
-    Returns:
-        Tuple[dict, dict]: A tuple containing two dictionaries:
-                           - The first dictionary contains the
-                             components of the dust source for M stars.
-                           - The second dictionary contains the default
-                             values for the dust source for M stars.
+    Returns
+    -------
+    Tuple[dict, dict]
+        A tuple containing two dictionaries:
+        - The first dictionary contains the components of the dust source for M stars.
+        - The second dictionary contains the default values for the dust source for M stars.
     """
     comps, defaults = _parse_radio_info(forms, "dust_sourceM", "input", "radio")
     return comps["dust_sourceM"], defaults
@@ -348,13 +342,18 @@ def _get_cdust(forms: BeautifulSoup) -> Tuple[dict, dict]:
     This function parses the provided BeautifulSoup form to extract
     the dust source information for C stars.
 
-    Args:
-        forms (BeautifulSoup): The BeautifulSoup object containing the form data.
+    Parameters
+    ----------
+    forms : BeautifulSoup
+        The BeautifulSoup object containing the form data.
 
-    Returns:
-        Tuple[dict, dict]: A tuple containing two dictionaries:
-            - The first dictionary contains the components of the dust source for C stars.
-            - The second dictionary contains the default values for the dust source for C stars.
+    Returns
+    -------
+    Tuple[dict, dict]
+        A tuple containing two dictionaries:
+        - The first dictionary contains the components of the dust source for C stars.
+        - The second dictionary contains the default values for the dust source for C stars.
+
     """
     comps, defaults = _parse_radio_info(forms, "dust_sourceC", "input", "radio")
     return comps["dust_sourceC"], defaults
@@ -364,13 +363,18 @@ def _get_extinction(forms: BeautifulSoup) -> Tuple[dict, dict]:
     """
     Extracts extinction information from the provided BeautifulSoup form.
 
-    Args:
-        forms (BeautifulSoup): A BeautifulSoup object containing the form data.
+    Parameters
+    ----------
+    forms : BeautifulSoup
+        A BeautifulSoup object containing the form data.
 
-    Returns:
-        Tuple[dict, dict]: A tuple containing two dictionaries:
-            - The first dictionary contains the extracted extinction components.
-            - The second dictionary contains the default values for the extinction components.
+    Returns
+    -------
+    Tuple[dict, dict]
+        A tuple containing two dictionaries:
+        - The first dictionary contains the extracted extinction components.
+        - The second dictionary contains the default values for the extinction components.
+
     """
     elements = [
         _parse_text_info(forms, "extinction_av", "input", "text"),
@@ -389,13 +393,17 @@ def _get_imf(forms: BeautifulSoup) -> Tuple[dict, dict]:
     """
     Extracts and cleans IMF (Initial Mass Function) information from the provided BeautifulSoup form data.
 
-    Args:
-        forms (BeautifulSoup): A BeautifulSoup object containing the form data to parse.
+    Parameters
+    ----------
+    forms : BeautifulSoup
+        A BeautifulSoup object containing the form data to parse.
 
-    Returns:
-        Tuple[dict, dict]: A tuple containing two dictionaries:
-            - The first dictionary contains cleaned IMF component information with keys modified to remove 'tab_imf/imf_' and '.dat'.
-            - The second dictionary contains cleaned default IMF values with keys modified to remove 'tab_imf/imf_' and '.dat'.
+    Returns
+    -------
+    Tuple[dict, dict]
+        A tuple containing two dictionaries:
+        - The first dictionary contains cleaned IMF component information with keys modified to remove 'tab_imf/imf_' and '.dat'.
+        - The second dictionary contains cleaned default IMF values with keys modified to remove 'tab_imf/imf_' and '.dat'.
     """
     comps, defaults = _parse_select_info(forms, "imf_file", "select")
     cleaned = {}
@@ -412,14 +420,21 @@ def _get_imf(forms: BeautifulSoup) -> Tuple[dict, dict]:
 def _get_age(forms: BeautifulSoup) -> Tuple[dict, dict]:
     """
     Extracts age-related information from a BeautifulSoup form.
+
     This function parses various age-related fields from the provided BeautifulSoup form object.
     It collects values and default values from radio and text input elements.
-    Args:
-        forms (BeautifulSoup): The BeautifulSoup object containing the form to parse.
-    Returns:
-        Tuple[dict, dict]: A tuple containing two dictionaries:
-            - The first dictionary contains the parsed values.
-            - The second dictionary contains the default values.
+
+    Parameters
+    ----------
+    forms : BeautifulSoup
+        The BeautifulSoup object containing the form to parse.
+
+    Returns
+    -------
+    Tuple[dict, dict]
+        A tuple containing two dictionaries:
+        - The first dictionary contains the parsed values.
+        - The second dictionary contains the default values.
     """
     _parse_text_info(forms, "isoc_isagelog", "input", "radio")
     elements = [
@@ -444,13 +459,17 @@ def _get_met(forms: BeautifulSoup) -> Tuple[dict, dict]:
     """
     Extracts and parses metallicity-related information from the given BeautifulSoup form.
 
-    Args:
-        forms (BeautifulSoup): A BeautifulSoup object containing the form data to be parsed.
+    Parameters
+    ----------
+    forms : BeautifulSoup
+        A BeautifulSoup object containing the form data to be parsed.
 
-    Returns:
-        Tuple[dict, dict]: A tuple containing two dictionaries:
-            - The first dictionary contains the parsed values for each metallicity-related field.
-            - The second dictionary contains the default values for each metallicity-related field.
+    Returns
+    -------
+    Tuple[dict, dict]
+        A tuple containing two dictionaries:
+        - The first dictionary contains the parsed values for each metallicity-related field.
+        - The second dictionary contains the default values for each metallicity-related field.
     """
     elements = [
         _parse_radio_info(forms, "isoc_ismetlog", "input", "radio"),
@@ -510,10 +529,13 @@ def _get_page_info():
 
 
 def generate_doc() -> str:
-    """Generate the documentation from the config variable
+    """
+    Generate the documentation from the config variable.
 
-    Returns:
-        str: The generated documentation in markdown format.
+    Returns
+    -------
+    str
+        The generated documentation in markdown format.
     """
 
     text = """ 
@@ -644,28 +666,29 @@ def update_config():
 def validate_query_parameter(**kw):
     """
     Validates the query parameters for isochrone generation.
+
     Parameters:
-    **kw: dict
-        A dictionary of keyword arguments containing the following keys:
-        - isoc_agelow (float): Lower age limit.
-        - isoc_ageupp (float): Upper age limit.
-        - isoc_lagelow (float): Lower log age limit.
-        - isoc_lageupp (float): Upper log age limit.
-        - isoc_zlow (float): Lower metallicity (Z) limit.
-        - isoc_zupp (float): Upper metallicity (Z) limit.
-        - isoc_metlow (float): Lower [M/H] limit.
-        - isoc_metupp (float): Upper [M/H] limit.
-        - photsys_file (str): Photometric system file.
-        - imf_file (str): Initial Mass Function (IMF) file.
-        - track_parsec (str): PARSEC track identifier.
-        - track_omegai (float): Initial rotation velocity.
-        - track_colibri (str): COLIBRI track identifier.
-        - dust_sourceC (str): Dust source for carbon stars.
-        - dust_sourceM (str): Dust source for M-type stars.
-        - extinction_coeff (str): Extinction coefficient.
-        - extinction_curve (str): Extinction curve.
-        - kind_LPV (str): Long Period Variable (LPV) kind.
-        - photsys_version (str): Photometric system version.
+        kw (dict): A dictionary of keyword arguments containing the following keys
+
+            - isoc_agelow : float, Lower age limit.
+            - isoc_ageupp : float, Upper age limit.
+            - isoc_lagelow : float, Lower log age limit.
+            - isoc_lageupp : float, Upper log age limit.
+            - isoc_zlow : float, Lower metallicity (Z) limit.
+            - isoc_zupp : float, Upper metallicity (Z) limit.
+            - isoc_metlow : float, Lower [M/H] limit.
+            - isoc_metupp : float, Upper [M/H] limit.
+            - photsys_file : str, Photometric system file.
+            - imf_file : str, Initial Mass Function (IMF) file.
+            - track_parsec : str, PARSEC track identifier.
+            - track_omegai : float, Initial rotation velocity.
+            - track_colibri : str, COLIBRI track identifier.
+            - dust_sourceC : str, Dust source for carbon stars.
+            - dust_sourceM : str, Dust source for M-type stars.
+            - extinction_coeff : str, Extinction coefficient.
+            - extinction_curve : str, Extinction curve.
+            - kind_LPV : str, Long Period Variable (LPV) kind.
+            - photsys_version : str, Photometric system version.
 
     Raises:
         ValueError: If any of the parameters are invalid or out of the expected range.
@@ -786,7 +809,3 @@ def validate_query_parameter(**kw):
     photsys_version = [k[1] for k in configuration["photsys_file"]["photsys_version"]]
     if kw["photsys_version"] not in photsys_version:
         raise ValueError(f'Invalid photometric system version: {kw["photsys_version"]}')
-
-
-if __name__ == "__main__":
-    reload_configuration()

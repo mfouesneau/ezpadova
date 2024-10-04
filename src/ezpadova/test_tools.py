@@ -14,11 +14,11 @@ def test_deprecated_replacedby():
         # Check that a warning was raised
         assert len(w) == 1
         assert issubclass(w[-1].category, DeprecationWarning)
-        assert "old_function is deprecated and will be removed in a future version. Use new_function instead." in str(w[-1].message)
+        assert "old_function is deprecated and will be removed in a future version. Use :func:`new_function` instead." in str(w[-1].message)
         
         # Check the result of the function
         assert result == "old"
         
         # Check the docstring
-        assert old_function.__doc__.startswith("old_function is deprecated and will be removed in a future version. Use new_function instead.")
+        assert "old_function is deprecated and will be removed in a future version. Use :func:`new_function` instead." in old_function.__doc__
         assert "This is the old function." in old_function.__doc__
