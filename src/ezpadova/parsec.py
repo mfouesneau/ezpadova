@@ -10,13 +10,6 @@ import requests
 from .config import configuration, validate_query_parameter
 from .tools import get_file_archive_type
 
-# DEBUG only
-# from config import configuration, validate_query_parameter
-# from tools import get_file_archive_type
-
-# TODO: add a function to resample evolution stages
-# TODO: add a quick interpolator
-
 
 def build_query(**kwargs) -> dict:
     """
