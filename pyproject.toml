@@ -1,0 +1,67 @@
+[project]
+name = "ezpadova"
+version = "2.0"
+description = "A python package that allows you to download PADOVA/PARSEC isochrones directly from their website"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "requests",
+    "pandas",
+    "beautifulsoup4",
+    "numpy",
+    "scipy",
+]
+authors = [{name="Morgan Fouesneau"}]
+classifiers=[
+      'Development Status :: 4 - Beta',
+      'Intended Audience :: Science/Research',
+      'Operating System :: OS Independent',
+      'Programming Language :: Python',
+      'Topic :: Scientific/Engineering :: Astronomy'
+      ]
+
+[build-system]
+requires = ["setuptools>=60",
+            "setuptools-scm>=6.2",
+            "wheel",
+            ]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# By default, include-package-data is true in pyproject.toml, so you do
+# NOT have to specify this line.
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]                  # list of folders that contain the packages (["."] by default)
+include = ["ezpadova*"]          # package names should match these glob patterns (["*"] by default)
+exclude = ["ezpadova.test*"]    # exclude packages matching these glob patterns (empty by default)
+namespaces = true                # to disable scanning PEP 420 namespaces (true by default)
+
+[tool.setuptools.package-data]
+ezpadova = ['*.json', '*.md']
+
+[project.optional-dependencies]
+
+testing = [
+    "pytest",
+    "pytest-doctestplus",
+    "codecov",
+    "pytest-cov"]
+
+ci = [
+  "toml",
+  "ruff",
+  "isort"]
+
+docs = [
+  "sphinx>=4.4.0",
+  "sphinx-book-theme>=0.3.3",
+  "sphinx-automodapi>=0.14",
+  "sphinx_copybutton>=0.5",
+  "sphinx-mdinclude>=0.6",
+  "myst-nb==0.16.0",
+  # for syntax highlighting (https://nbsphinx.readthedocs.io/en/0.8.0/installation.html#Pygments-Lexer-for-Syntax-Highlighting)
+  "IPython>=8.0",
+  "matplotlib",
+  "numpydoc"]
