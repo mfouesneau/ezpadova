@@ -111,6 +111,35 @@ def dedent(text: str) -> str:
     return text
 
 
+def reload_configuration():
+    """
+    Reloads the configuration from a JSON file.
+
+    This function determines the base directory of the current file and constructs
+    the path to the configuration file named 'config.json'. If the configuration file
+    exists, it loads the configuration from the file and updates the global configuration
+    dictionary. If the configuration file does not exist, it calls the `update_config`
+    function to create a new configuration and writes it to the 'config.json' file.
+
+    Raises:
+        FileNotFoundError: If the configuration file does not exist and `update_config`
+                           fails to create a new configuration.
+        json.JSONDecodeError: If the configuration file contains invalid JSON.
+    """
+    base_directory = os.path.dirname(os.path.abspath(__file__))
+    config_file = os.path.join(base_directory, "parsec.json")
+    documentation_file = os.path.join(base_directory, "parsec.md")
+    if os.path.isfile(config_file):
+        with open(config_file) as f:
+            configuration.update(json.load(f))
+    else:
+        update_config()
+        with open(config_file, "w") as f:
+            json.dump(configuration, f, indent=4)
+    with open(documentation_file, "w") as f:
+        f.write(generate_doc())
+
+
 def _get_siblings_text(element: BeautifulSoup) -> str:
     """
     Extracts and concatenates the text content from the sibling elements of the given BeautifulSoup element
@@ -642,8 +671,8 @@ def validate_query_parameter(**kw):
         ValueError: If any of the parameters are invalid or out of the expected range.
     """
     # check parameters validity
-    acceptable_age = [1, 1e12]    
-    acceptable_lage = [0, 12]    
+    acceptable_age = [1, 1e12]
+    acceptable_lage = [0, 12]
 
     if float(kw["isoc_agelow"]) > float(kw["isoc_ageupp"]):
         raise ValueError(
@@ -670,8 +699,8 @@ def validate_query_parameter(**kw):
         raise ValueError(
             f'Upper log age must be between {acceptable_lage[0]} and {acceptable_lage[1]}. Got {kw["isoc_lageupp"]} instead.'
         )
-    
-    acceptable_Z = [1e-8, 1.]
+
+    acceptable_Z = [1e-8, 1.0]
     acceptable_met = [-8, 1]
     if float(kw["isoc_zlow"]) > float(kw["isoc_zupp"]):
         raise ValueError(
@@ -709,7 +738,7 @@ def validate_query_parameter(**kw):
         )
 
     if len(configuration) <= 2:
-        update_config()
+        reload_configuration()
 
     if kw["photsys_file"] not in configuration["photsys_file"] and not kw[
         "photsys_file"
@@ -757,35 +786,6 @@ def validate_query_parameter(**kw):
     photsys_version = [k[1] for k in configuration["photsys_file"]["photsys_version"]]
     if kw["photsys_version"] not in photsys_version:
         raise ValueError(f'Invalid photometric system version: {kw['photsys_version']}')
-
-
-def reload_configuration():
-    """
-    Reloads the configuration from a JSON file.
-
-    This function determines the base directory of the current file and constructs
-    the path to the configuration file named 'config.json'. If the configuration file
-    exists, it loads the configuration from the file and updates the global configuration
-    dictionary. If the configuration file does not exist, it calls the `update_config`
-    function to create a new configuration and writes it to the 'config.json' file.
-
-    Raises:
-        FileNotFoundError: If the configuration file does not exist and `update_config`
-                           fails to create a new configuration.
-        json.JSONDecodeError: If the configuration file contains invalid JSON.
-    """
-    base_directory = os.path.dirname(os.path.abspath(__file__))
-    config_file = os.path.join(base_directory, "parsec.json")
-    documentation_file = os.path.join(base_directory, "parsec.md")
-    if os.path.isfile(config_file):
-        with open(config_file) as f:
-            configuration.update(json.load(f))
-    else:
-        update_config()
-        with open(config_file, "w") as f:
-            json.dump(configuration, f, indent=4)
-    with open(documentation_file, "w") as f:
-        f.write(generate_doc())
 
 
 if __name__ == "__main__":
