@@ -36,9 +36,13 @@ pip install git+https://github.com/mfouesneau/ezpadova
 
 Manual installation
 
-download the repository and run the setup
+download the repository and pip install from it
 
-```python setup.py install```
+```python
+git clone https://github.com/mfouesneau/ezpadova
+cd ezpadova
+python -m pip install . 
+```
 
 
 EXAMPLE USAGE (deprecated)
@@ -46,17 +50,17 @@ EXAMPLE USAGE (deprecated)
 
 * Basic example of downloading a sequence of isochrones, plotting, saving
 ```python
->>> from ezpadova import parsec
->>> r = parsec.get_t_isochrones(6.0, 7.0, 0.05, 0.02)
+>>> from ezpadova import get_t_isochrones
+>>> r = get_t_isochrones(6.0, 7.0, 0.05, 0.02)
 
 >>> import pylab as plt
 >>> plt.scatter(r['logT'], r['logL'], c=r['logA'], edgecolor='None')
 >>> plt.show()
 
->>> r.write('myiso.fits')
 ```
 
 * getting only one isochrone
 ```python 
->>> r = parsec.get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
+>>> from ezpadova import get_one_isochrone
+>>> r = get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
 ```

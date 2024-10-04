@@ -51,7 +51,7 @@ Installation
 
         git clone https://github.com/mfouesneau/ezpadova
         cd ezpadova
-        python setup.py intall
+        python -m pip install . 
 
 
 Example usage (deprecated)
@@ -65,7 +65,7 @@ Example usage (deprecated)
 .. code-block:: python
 
     from ezpadova import get_t_isochrones
-    r = parsec.get_t_isochrones(6.0, 7.0, 0.05, 0.02)
+    r = get_t_isochrones(6.0, 7.0, 0.05, 0.02)
 
     import pylab as plt
     plt.scatter(r['logT'], r['logL'], c=r['logA'], edgecolor='None')
@@ -76,7 +76,7 @@ Example usage (deprecated)
 .. code-block:: python
 
     from ezpadova import get_one_isochrone
-    r = parsec.get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
+    r = get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
 
 
 Contents
