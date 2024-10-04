@@ -70,7 +70,7 @@ Example usage (deprecated)
 .. code-block:: python
 
     from ezpadova import get_one_isochrone
-    r = get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
+    r = get_one_isochrone(1e7, 0.02, model='parsec12s', phot='YBC_spitzer')
 
 
 Contents
