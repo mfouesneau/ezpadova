@@ -7,7 +7,7 @@ requires-python = ">=3.9"
 dependencies = [
     "requests",
     "pandas",
-    "BeautifulSoup"
+    "beautifulsoup4"
 ]
 authors = [{name="Morgan Fouesneau"}]
 classifiers=[
