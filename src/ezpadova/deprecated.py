@@ -1,5 +1,6 @@
 """Deprecated functions from previous version that are kept here for backward compatibility."""
 
+from typing import Union
 from .parsec import get_isochrones
 from .tools import deprecated_replacedby
 import pandas as pd
@@ -8,7 +9,7 @@ import pandas as pd
 @deprecated_replacedby("get_isochrones")
 def get_one_isochrone(
     age_yr=None, Z=None, logage=None, MH=None, ret_table=True, **kwargs
-) -> pd.DataFrame | bytes:
+) -> Union[pd.DataFrame, bytes]:
     """
     Get one isochrone at a given time and metallicity content.
     Parameters:
@@ -51,7 +52,7 @@ def get_one_isochrone(
 @deprecated_replacedby("get_isochrones")
 def get_Z_isochrones(
     z0, z1, dz, age_yr=None, logage=None, ret_table=True, **kwargs
-) -> pd.DataFrame | bytes:
+) -> Union[pd.DataFrame, bytes]:
     """
     Retrieve isochrones for a given metallicity range and age.
 
@@ -82,12 +83,13 @@ def get_Z_isochrones(
     else:
         query["logage"] = [logage, logage, 0]
 
-
     return get_isochrones(return_df=ret_table, **query, **kwargs)
 
 
 @deprecated_replacedby("get_isochrones")
-def get_t_isochrones(logt0, logt1, dlogt, Z=None, MH=None, ret_table=True, **kwargs):
+def get_t_isochrones(
+    logt0, logt1, dlogt, Z=None, MH=None, ret_table=True, **kwargs
+) -> Union[pd.DataFrame, bytes]:
     """
     Retrieve isochrones for a given age range and metallicity.
 
