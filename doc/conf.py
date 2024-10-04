@@ -70,7 +70,7 @@ nbsphinx_prompt_width = "0"
 #
 html_theme = "sphinx_book_theme"
 html_theme_options = {
-    "path_to_docs": "docs",
+    "path_to_docs": "doc",
     "repository_url": "https://github.com/mfouesneau/ezpadova",
     "repository_branch": "master",
     "launch_buttons": {
