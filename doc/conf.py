@@ -72,7 +72,7 @@ html_theme = "sphinx_book_theme"
 html_theme_options = {
     "path_to_docs": "docs",
     "repository_url": "https://github.com/mfouesneau/ezpadova",
-    "repository_branch": "2.0",
+    "repository_branch": "master",
     "launch_buttons": {
         "binderhub_url": "https://mybinder.org",
         "colab_url": "https://colab.research.google.com/",
