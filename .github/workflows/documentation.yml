@@ -35,12 +35,10 @@ jobs:
         working-directory: ./
         run: |
           pip install --upgrade pip
-          pip install .
+          pip install . ".[docs]"
       - name: sphinx-action@master
         uses: ammaraskar/sphinx-action@master
         with:
-          pre-build-command: |
-            python -m pip install ".[docs]"
           docs-folder: "doc/"
       - name: Setup Pages
         uses: actions/configure-pages@v5
