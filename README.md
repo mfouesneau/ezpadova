@@ -1,16 +1,30 @@
 EZPADOVA -- A python package that allows you to download PADOVA isochrones directly from their website
 ======================================================================================================
 
+[![](https://img.shields.io/badge/Parsec_CMD-3.8-green.svg)](http://stev.oapd.inaf.it/cgi-bin/cmd_3.8)
+![](https://img.shields.io/badge/python-3.9,_3.10,_3.11,_3.12-blue.svg)
 
 This small package provides a direct interface to the PADOVA/PARSEC isochrone
 webpage (http://stev.oapd.inaf.it/cgi-bin/cmd).
 It compiles the URL needed to query the website and retrives the data into a
 python variable.
 
-This package has been tested on python 2.7 and python 3.
+This package has been tested on python 3.9, 3.10, 3.11, 3.12 through the github actions CI.
 
-:version: 1
+:version: 2.0
 :author: MF
+
+New in version 2.0
+------------------
+* Updated the interface to the new PADOVA website (i.e. >=3.8) [minor changes in the form format from 3.7]
+* New function `get_isochrone` does all the slices directly (combines `get_Z_isochrones`, `get_t_isochrones`, and `get_one_isochrone` which are now deprecated.)
+* `get_isochrone` handles ages, log ages, Z and [M/H] as inputs (see documentation).
+* Most of the code has been rewritten to be more robust and easier to maintain. In particular the parsing of the online form has been improved.
+* Many integration tests to keep checking the package interface.
+* The output format is now a `pandas.DataFrame` instead of the internal format. (though previous aliases of columns are no more available)
+* Documentation has been updated and (hopefully) improved.
+
+Available photometric systems, parameters, and default values: [see internal documentation](src/ezpadova/parsec.md)
 
 Installation
 ------------
@@ -28,7 +42,7 @@ download the repository and run the setup
 ```python setup.py install```
 
 
-EXAMPLE USAGE
+EXAMPLE USAGE (deprecated)
 -------------
 
 * Basic example of downloading a sequence of isochrones, plotting, saving
@@ -47,129 +61,3 @@ EXAMPLE USAGE
 ```python 
 >>> r = parsec.get_one_isochrone(1e7, 0.02, model='parsec12s', phot='spitzer')
 ```
-
-Available model interfaces
---------------------------
-`parsec12s_r14`: PARSEC version 1.2S + TP-AGB tracks from COLIBRI (Marigo et al. (2013)), version PR16 (Rosenfield et al. (2016)).
-
-`parsec12s`: PARSEC version 1.2S,  Tang et al. (2014),  Chen et al. (2014)
-
-`parsec11`: PARSEC version 1.1, With revised diffusion+overshooting in
-low-mass stars, and improvements in interpolation scheme.
-
-`parsec10`: PARSEC version 1.0
-
-`2010`: Marigo et al. (2008) with the Girardi et al. (2010) Case A correction
-for low-mass, low-metallicity AGB tracks
-
-`2008`: Marigo et al. (2008): Girardi et al. (2000) up to early-AGB +
-detailed TP-AGB from Marigo & Girardi (2007) (for M <= 7 Msun) + Bertelli et al.
-(1994) (for M > 7 Msun) + additional Z=0.0001 and Z=0.001 tracks.
-
-`2010b`: Marigo et al. (2008) with the Girardi et al. (2010) Case B correction
-for low-mass, low-metallicity AGB tracks
-
-`2002`:  Basic set of Girardi et al. (2002) : Girardi et al. (2000) +
-simplified TP-AGB (for M <= 7 Msun) + Bertelli et al.  (1994) (for M > 7 Msun) +
-additional Z=0.0001 and Z=0.001 tracks.
-
-Photometric systems 
--------------------
-(incomplete list)
-
-
-`2mass_spitzer`:  2MASS + Spitzer (IRAC+MIPS)
-
-`2mass_spitzer_wise`:  2MASS + Spitzer (IRAC+MIPS) + WISE
-
-`2mass`:  2MASS JHKs
-
-`ubvrijhk`: UBVRIJHK (cf. Maiz-Apellaniz 2006 + Bessell 1990)
-
-`bessell`: UBVRIJHKLMN (cf. Bessell 1990 + Bessell & Brett 1988)
-
-`akari`: AKARI
-
-`batc`: BATC
-
-`megacam`: CFHT/Megacam u g'r'i'z'
-
-`dcmc`: DCMC
-
-`denis`: DENIS
-
-`dmc14`: DMC 14 filters
-
-`dmc15`: DMC 15 filters
-
-`eis`: ESO/EIS (WFI UBVRIZ + SOFI JHK)
-
-`wfi`: ESO/WFI
-
-`wfi_sofi`: ESO/WFI+SOFI
-
-`wfi2`: ESO/WFI2
-
-`galex`: GALEX FUV+NUV (Vegamag) + Johnson's UBV
-
-`galex_sloan`: GALEX FUV+NUV + SDSS ugriz (all ABmags) 
-
-`UVbright`: HST+GALEX+Swift/UVOT UV filters
-
-`acs_hrc`: HST/ACS HRC
-
-`acs_wfc`: HST/ACS WFC
-
-`nicmosab`: HST/NICMOS AB
-
-`nicmosst`: HST/NICMOS ST
-
-`nicmosvega`: HST/NICMOS vega
-
-`stis`: HST/STIS imaging mode
-
-`wfc3ir`: HST/WFC3 IR channel (final throughputs)
-
-`wfc3uvis1`: HST/WFC3 UVIS channel, chip 1 (final throughputs)
-
-`wfc3uvis2`: HST/WFC3 UVIS channel, chip 2 (final throughputs)
-
-`wfc3_medium`: HST/WFC3 medium filters (UVIS1+IR, final throughputs)
-
-`wfc3`: HST/WFC3 wide filters (UVIS1+IR, final throughputs)
-
-`wfpc2`: HST/WFPC2 (Vegamag, cf. Holtzman et al. 1995)
-
-`kepler`: Kepler + SDSS griz + DDO51 (in ABmags)
-
-`kepler_2mass`: Kepler + SDSS griz + DDO51 (in ABmags) + 2MASS (~Vegamag)
-
-`ogle`: OGLE-II
-
-`panstarrs1`: Pan-STARRS1
-
-`sloan`: SDSS ugriz
-
-`sloan_2mass`: SDSS ugriz + 2MASS JHKs
-
-`sloan_ukidss`: SDSS ugriz + UKIDSS ZYJHK
-
-`swift_uvot`: SWIFT/UVOT UVW2, UVM2, UVW1,u (Vegamag) 
-
-`spitzer`: Spitzer IRAC+MIPS
-
-`stroemgren`: Stroemgren-Crawford
-
-`suprimecam`: Subaru/Suprime-Cam (ABmags)
-
-`tycho2`: Tycho VTBT
-
-`ukidss`: UKIDSS ZYJHK (Vegamag)
-
-`visir`: VISIR
-
-`vista`: VISTA ZYJHKs (Vegamag)
-
-`washington`: Washington CMT1T2
-
-`washington_ddo51`: Washington CMT1T2 + DDO51
