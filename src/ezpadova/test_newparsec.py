@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 
 from .config import generate_doc, update_config
-from .newparsec import build_query, get_file_archive_type, get_isochrones
+from .parsec import build_query, get_file_archive_type, get_isochrones
 
 
 def test_get_file_archive_type():

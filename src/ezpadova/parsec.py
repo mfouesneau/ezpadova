@@ -1,456 +1,191 @@
-"""
-EZPADOVA -- A python package that allows you to download PADOVA isochrones
-directly from their website
-"""
-from __future__ import print_function, unicode_literals, division
-
-import os
-
-from urllib.parse import urlencode
-from urllib import request
-from urllib.request import urlopen
-from html import parser
-
-
-from io import BytesIO
-import zlib
 import re
-import json
-from .simpletable import SimpleTable as Table
+import zlib
+from typing import Tuple
+from urllib.request import urlopen
+from io import BufferedReader, BytesIO
+
+import requests
+import pandas as pd
+
+from .config import configuration, validate_query_parameter
+from .tools import get_file_archive_type
+
+# DEBUG only
+# from config import configuration, validate_query_parameter
+# from tools import get_file_archive_type
+
+# TODO: add a function to resample evolution stages
+# TODO: add a quick interpolator
 
 
-base_directory = os.path.dirname(os.path.abspath(__file__))
-with open(os.path.join(base_directory, 'parsec.json')) as f:
-    _cfg = json.load(f)
-    map_carbon_stars = _cfg["map_carbon_stars"]
-    map_phot = _cfg["map_phot"]
-    map_circum_Mstars = _cfg["map_circum_Mstars"]
-    map_interp = _cfg["map_interp"]
-    map_circum_Cstars = _cfg["map_circum_Cstars"]
-    __def_args__ = _cfg["__def_args__"]
-    map_models = _cfg["map_models"]
-    map_isoc_val = _cfg["map_isoc_val"]
-    webserver = _cfg.get("webserver", 'http://stev.oapd.inaf.it')
+def build_query(**kwargs) -> dict:
+    """
+    Update parameters to match the website requirements.
+
+    This function takes keyword arguments, updates them with default values from
+    the configuration, and modifies certain keys to match the expected format
+    required by the website.
+
+    Parameters:
+    **kwargs: Arbitrary keyword arguments that will be used to update the default
+              configuration values and passed as values to the online form.
+
+    Returns:
+    dict: A dictionary of updated parameters with keys modified to match the
+         website's requirements.
+    """
+    kw = configuration["defaults"].copy()
+    kw.update(kwargs)
+
+    # update some keys to match the website requirements
+    if not kw['photsys_file'].endswith('.dat'):
+        kw['photsys_file'] = f"YBC_tab_mag_odfnew/tab_mag_{kw['photsys_file']}.dat"
+    if not kw['imf_file'].endswith('.dat'):
+        kw["imf_file"] = f"tab_imf/imf_{kw['imf_file']}.dat"
+    return kw
 
 
-def get_photometry_list():
-    """ Try to extact photometric options directly from the website
+def parse_result(data: str | bytes | BufferedReader, comment: str = '#') -> pd.DataFrame:
+    """
+    Parses the input data and returns a pandas DataFrame.
 
-    Directly update the configuration
+    Parameters:
+    data (str | bytes | BufferedReader): The input data to be parsed. It can be a string, bytes, or a BufferedReader object.
+    comment (str): The character used to denote comment lines in the input data. Default is '#'.
+
+    Returns:
+    pd.DataFrame: A pandas DataFrame containing the parsed data. The DataFrame will have an attribute 'comment' which contains the comment lines from the input data.
+
+    Notes:
+    - If the input data is a BufferedReader, it will be read and decoded as 'utf-8'.
+    - The function assumes that the header line is the first non-comment line in the input data.
+    - The DataFrame is created by reading the input data with pandas.read_csv, using whitespace as the delimiter.
+    - The comment lines from the input data are stored in the 'comment' attribute of the DataFrame.
     """
 
-    class Parser(parser.HTMLParser):
-        """ Only cares about select and option values """
-        def __init__(self, *args, **kwargs):
-            parser.HTMLParser.__init__(self, *args, **kwargs)
-            self.data = {}
-            self.name = None
-            self.lst = []
-            self.current = []
+    if isinstance(data, BufferedReader):
+        data = data.read()
 
-        def handle_starttag(self, tag, attrs):
-            # print(tag)
-            if 'select' in tag:
-                self.name = [k[1] for k in attrs if k[0] == 'name'][0]
-                # print("SELECT FOUND: ", self.name)
-            if 'option' in tag:
-                self.current.append(attrs[0][1])
+    split_txt = data.decode('utf-8').split('\n')
+    for num, line in enumerate(split_txt):
+        if line[0] != comment:
+            break
+    start = num - 1
+    header = split_txt[start].replace('#', '').strip().split()
+    df = pd.read_csv(BytesIO(data), skiprows=start + 1, sep=r'\s+', names=header, comment='#')
+    df.attrs['comment'] = '\n'.join(k.replace('#', '').strip() for k in split_txt[:start])
+    return df
 
-        def handle_endtag(self, tag):
-            if 'select' in tag:
-                self.data[self.name] = self.lst
-                self.name = None
-                self.lst = []
-            if 'option' in tag:
-                self.current = [self.current[0], ''.join(self.current[1:])]
-                self.lst.append(self.current)
-                self.current = []
-
-        def handle_data(self, data):
-            if len(data) < 2:
-                return
-            if self.name is not None:
-                self.current.append(data.replace('\n', ' '))
-
-    data = urlopen(webserver + '/cgi-bin/cmd').read().decode('utf8')
-    data = data.replace("option selected value", "option value")
-    p = Parser()
-    p.feed(data)
-    phot_list = p.data['photsys_file'][1:]   # first one is a list
-
-    final = []
-    for key, val in phot_list:
-        if len(val) > 0:
-            key = key.replace('tab_mag_odfnew/tab_mag_', '').replace('.dat', '')
-        final.append((key, val))
-
-    # update the main configuration
-    map_phot.update(final)
-
-
-# Help messages
-# -------------
-
-def help_phot():
-    for k, v in map_phot.items():
-        print('phot "{0}":\n   {1}\n'.format(k, v))
-
-
-def help_models():
-    for k, v in map_models.items():
-        print('model "{0}":\n   {1}\n'.format(k, v[1]))
-
-
-def help_carbon_stars():
-    for k, v in map_carbon_stars.items():
-        print('model "{0}":\n   {1}\n'.format(k, v[1]))
-
-
-def help_circumdust():
-    print('M stars')
-    for k, v in map_circum_Mstars.items():
-        print('model "{0}":\n   {1}\n'.format(k, v[1]))
-    print('C stars')
-    for k, v in map_circum_Cstars.items():
-        print('model "{0}":\n   {1}\n'.format(k, v[1]))
-
-
-def file_type(filename, stream=False):
-    """ Detect potential compressed file
-    Returns the gz, bz2 or zip if a compression is detected, else None.
+ 
+def query(**kwargs) -> bytes:
     """
-    magic_dict = { "\x1f\x8b\x08": "gz", "\x42\x5a\x68": "bz2", "\x50\x4b\x03\x04": "zip" }
+    Query the CMD webpage with the given parameters.
 
-    max_len = max(len(x) for x in magic_dict)
-    if not stream:
-        with open(filename) as f:
-            file_start = f.read(max_len)
-        for magic, filetype in magic_dict.items():
-            if file_start.startswith(magic):
-                return filetype
+    This function sends a POST request to the CMD webpage specified in the 
+    configuration and retrieves the resulting data. The data is then processed 
+    and returned as bytes. If the server response is incorrect or if there is 
+    an issue with the data retrieval, a RuntimeError is raised.
+
+    Args:
+        **kwargs: Arbitrary keyword arguments to be included in the query.
+
+    Returns:
+        bytes: The retrieved data from the CMD webpage.
+
+    Raises:
+        RuntimeError: If the server response is incorrect or if there is an 
+                      issue with data retrieval.
+    """
+    print(f"Querying {configuration['url']}...")
+    kw = build_query(**kwargs)
+    req = requests.post(configuration["url"], data=kw, timeout=60, allow_redirects=True)
+    if req.status_code != 200:
+        raise RuntimeError('Server Response is incorrect')
     else:
-        for magic, filetype in magic_dict.items():
-            if filename[:len(magic)] == magic:
-                return filetype
+        print('Retrieving data...')
 
-    return None
-
-
-# Build up URL request
-# --------------------
-
-def __get_url_args(model=None, carbon=None, interp=None, Mstars=None,
-                   Cstars=None, phot=None, **kwargs):
-    """ Update options in the URL query using internal shortcuts
-
-    Parameters
-    ----------
-
-    model: str
-        select the type of model :func:`help_models`
-
-    carbon: str
-        carbon stars model :func:`help_carbon_stars`
-
-    interp: str
-        interpolation scheme
-
-    Mstars: str
-        dust on M stars :func:`help_circumdust`
-
-    Cstars: str
-        dust on C stars :func:`help_circumdust`
-
-    phot: str
-        photometric set for photometry values :func:`help_phot`
-
-    Returns
-    -------
-    d: dict
-        cgi arguments
-    """
-    d = __def_args__.copy()
-
-    # overwrite some parameters
-    if model is not None:
-        d['isoc_kind'] = map_models["%s" % model][0]
-        if 'parsec' in model.lower():
-            d['output_evstage'] = 1
-        else:
-            d['output_evstage'] = 0
-
-    if carbon is not None:
-        d['kind_cspecmag'] = map_carbon_stars[carbon][0]
-
-    if interp is not None:
-        d['kind_interp'] = map_interp[interp]
-
-    if Cstars is not None:
-        d['dust_sourceC'] = map_circum_Cstars[Cstars]
-
-    if Mstars is not None:
-        d['dust_sourceM'] = map_circum_Mstars[Mstars]
-
-    if phot is not None:
-        d['photsys_file'] = 'tab_mag_odfnew/tab_mag_{0}.dat'.format(phot)
-
-    for k, v in kwargs.items():
-        if k in d:
-            d[k] = v
-
-    return d
-
-
-class __CMD_Error_Parser(parser.HTMLParser):
-    """ find error box in the recent version of CMD website """
-    def handle_starttag(self, tag, attrs):
-        if (tag == "p") & (dict(attrs).get('class', None) == 'errorwarning'):
-            self._record = True
-            self.data = []
-
-    def handle_endtag(self, tag):
-        if (tag == "p") & getattr(self, '_record', False):
-            self._record = False
-
-    def handle_data(self, data):
-        if getattr(self, '_record', False):
-            self.data.append(data)
-
-
-def __query_website(d):
-    """ Communicate with the CMD website """
-    webserver = 'http://stev.oapd.inaf.it'
-    print('Interrogating {0}...'.format(webserver))
-    url = webserver + '/cgi-bin/cmd_3.1'
-    # url = webserver + '/cgi-bin/cmd'
-    q = urlencode(d)
-    # print('Query content: {0}'.format(q))
-    req = request.Request(url, q.encode('utf8'))
-    c = urlopen(req).read().decode('utf8')
-    aa = re.compile('output\d+')
-    fname = aa.findall(c)
+    fname = re.compile(r'output\d+').findall(req.text)
+    domain = '/'.join(configuration['url'].split('/')[:3])
     if len(fname) > 0:
-        url = '{0}/tmp/{1}.dat'.format(webserver, fname[0])
-        print('Downloading data...{0}'.format(url))
-        bf = urlopen(url)
+        data_url = f'{domain}/tmp/{fname[0]}.dat'
+        print(f'Downloading data...{data_url}')
+        bf = urlopen(data_url)
         r = bf.read()
-        typ = file_type(r, stream=True)
+        typ = get_file_archive_type(r, stream=True)
         if typ is not None:
             r = zlib.decompress(bytes(r), 15 + 32)
         return r
     else:
-        # print(c)
-        print(url + q)
-        if "errorwarning" in c:
-            p = __CMD_Error_Parser()
-            p.feed(c)
-            print('\n', '\n'.join(p.data).strip())
+        print(configuration['url'], query)
+        print(req.text)
         raise RuntimeError('Server Response is incorrect')
 
 
-def __convert_to_Table(resp, dic=None):
-    """ Make a table from the string response content of the website """
+def get_isochrones(
+        age_yr: Tuple[float, float, float] | None = None, 
+        Z: Tuple[float, float, float] | None = None, 
+        logage: Tuple[float, float, float] | None = None, 
+        MH: Tuple[float, float, float] | None = None,
+        default_ranges: bool = False, 
+        return_df: bool = True,
+        **kwargs) -> pd.DataFrame | bytes:
 
-    def find_data(txt, comment='#'):
-        for num, line in enumerate(txt.split('\n')):
-            if line[0] != comment:
-                return num
+    kw = configuration["defaults"].copy()
+    kw.update(kwargs)
+    
+    # default_ranges means using the forms default values - no parameters are provided
+    if not default_ranges:
+        # check parameter consistency
+        if age_yr is None and logage is None:
+            raise ValueError('Either age_yr or logage must be provided.')
+        if age_yr is not None and logage is not None:
+            raise ValueError('Only one of age_yr or logage can be provided.')
 
-    _r = resp.decode('utf8')
-    start = find_data(_r) - 1
-    _r = '\n'.join(_r.split('\n')[start:])[1:].encode('utf8')
-    bf = BytesIO(_r)
-    tab = Table(bf, dtype='tsv', comment='#')
-    if dic is not None:
-        for k, v in dic.items():
-            tab.header[k] = v
+        if Z is None and MH is None:
+            raise ValueError('Either Z or MH must be provided.')
+        if Z is not None and MH is not None:
+            raise ValueError('Only one of Z or MH can be provided.')
+        
+        # check that any of the parameters are None or a triplet of Numbers
+        for name, param in zip(("age_yr", "Z", "logage", "MH"), (age_yr, Z, logage, MH)):
+            if param is not None:
+                if not isinstance(param, (list, tuple)) or len(param) != 3:
+                    raise ValueError(f'Parameter {name} must be a triplet of Numbers or None. Found {param} instead.')
 
-    # make some aliases
-    aliases = (('logA', 'logageyr'),
-               ('logA', 'log(age/yr)'),
-               ('logL', 'logLLo'),
-               ('logL', 'logL/Lo'),
-               ('logT', 'logTe'),
-               ('logg', 'logG'))
+        # setup linear age / log age query
+        if age_yr is not None:
+            kw['isoc_isagelog'] = 0
+            for key, val in zip(('isoc_agelow', 'isoc_ageupp', 'isoc_dage'), age_yr):
+                kw[key] = val
+        else:
+            kw['isoc_isagelog'] = 1
+            for key, val in zip(('isoc_lagelow', 'isoc_lageupp', 'isoc_dlage'), logage):
+                kw[key] = val
+    
+        # setup metallicity query in Z or [M/H]
+        if Z is not None:
+            kw['isoc_ismetlog'] = 0
+            for key, val in zip(('isoc_zlow', 'isoc_zupp', 'isoc_dz'), Z):
+                kw[key] = val
+        else:
+            kw['isoc_ismetlog'] = 1
+            for key, val in zip(('isoc_metlow', 'isoc_metupp', 'isoc_dmet'), MH):
+                kw[key] = val
+    
+    # check parameters validity
+    validate_query_parameter(**kw)
 
-    for a, b in aliases:
-        try:
-            tab.set_alias(a, b)
-        except KeyError:
-            pass
-            # print('Error setting alias {0}->{1}'.format(a, b))
+    # do the actual query
+    res = query(**kw)
 
-
-    return tab
-
-
-# Convenient Functions
-# --------------------
-
-def get_one_isochrone(age, metal, ret_table=True, **kwargs):
-    """ get one isochrone at a given time and Z
-
-    Parameters
-    ----------
-
-    age: float
-        age of the isochrone (in yr)
-
-    metal: float
-        metalicity of the isochrone
-
-    ret_table: bool
-        if set, return a eztable.Table object of the data
-
-    model: str
-        select the type of model :func:`help_models`
-
-    carbon: str
-        carbon stars model :func:`help_carbon_stars`
-
-    interp: str
-        interpolation scheme
-
-    Mstars: str
-        dust on M stars :func:`help_circumdust`
-
-    Cstars: str
-        dust on C stars :func:`help_circumdust`
-
-    phot: str
-        photometric set for photometry values :func:`help_phot`
-
-    Returns
-    -------
-    r: Table or str
-        if ret_table is set, return a eztable.Table object of the data
-        else return the string content of the data
-    """
-    d = __get_url_args(**kwargs)
-    d['isoc_val'] = 0
-    d['isoc_age'] = age
-    d['isoc_zeta'] = metal
-
-    r = __query_website(d)
-    if ret_table is True:
-        return __convert_to_Table(r, d)
+    # parse to dataframe if requested (default)
+    if return_df:
+        return parse_result(res)
     else:
-        return r
+        return res
+ 
 
-
-def get_Z_isochrones(z0, z1, dz, age, ret_table=True, **kwargs):
-    """ get a sequence of isochrones at constant time but variable Z
-
-    Parameters
-    ----------
-    z0: float
-        minimal value of Z
-
-    z11: float
-        maximal value of Z
-
-    dz: float
-        step in Z
-
-    age: float
-        age of the sequence (in yr)
-
-    ret_table: bool
-        if set, return a eztable.Table object of the data
-
-    model: str
-        select the type of model :func:`help_models`
-
-    carbon: str
-        carbon stars model :func:`help_carbon_stars`
-
-    interp: str
-        interpolation scheme
-
-    Mstars: str
-        dust on M stars :func:`help_circumdust`
-
-    Cstars: str
-        dust on C stars :func:`help_circumdust`
-
-    phot: str
-        photometric set for photometry values :func:`help_phot`
-
-    Returns
-    -------
-    r: Table or str
-        if ret_table is set, return a eztable.Table object of the data
-        else return the string content of the data
-    """
-    d = __get_url_args(**kwargs)
-    d['isoc_val'] = 2
-    d['isoc_age0'] = age
-    d['isoc_z0'] = z0
-    d['isoc_z1'] = z1
-    d['isoc_dz'] = dz
-
-    r = __query_website(d)
-    if ret_table is True:
-        return __convert_to_Table(r, d)
-    else:
-        return r
-
-
-def get_t_isochrones(logt0, logt1, dlogt, metal, ret_table=True, **kwargs):
-    """ get a sequence of isochrones at constant Z
-
-    Parameters
-    ----------
-    logt0: float
-        minimal value of log(t/yr)
-
-    logt1: float
-        maximal value of log(t/yr)
-
-    dlogt: float
-        step in log(t/yr) for the sequence
-
-    metal: float
-        metallicity value to use (Zsun=0.019)
-
-    ret_table: bool
-        if set, return a eztable.Table object of the data
-
-    model: str
-        select the type of model :func:`help_models`
-
-    carbon: str
-        carbon stars model :func:`help_carbon_stars`
-
-    interp: str
-        interpolation scheme
-
-    Mstars: str
-        dust on M stars :func:`help_circumdust`
-
-    Cstars: str
-        dust on C stars :func:`help_circumdust`
-
-    phot: str
-        photometric set for photometry values :func:`help_phot`
-
-    Returns
-    -------
-    r: Table or str
-        if ret_table is set, return a eztable.Table object of the data
-        else return the string content of the data
-    """
-    d = __get_url_args(**kwargs)
-    d['isoc_val'] = 1
-    d['isoc_zeta0'] = metal
-    d['isoc_lage0'] = logt0
-    d['isoc_lage1'] = logt1
-    d['isoc_dlage'] = dlogt
-
-    r = __query_website(d)
-    if ret_table is True:
-        return __convert_to_Table(r, d)
-    else:
-        return r
-
-get_photometry_list()
+if __name__ == "__main__":
+    df = get_isochrones(default_ranges=True)
+    print(df)
+    print(df.attrs['comment'])
