@@ -36,10 +36,6 @@ exclude = ["ezpadova.tests*"]    # exclude packages matching these glob patterns
 namespaces = true                # to disable scanning PEP 420 namespaces (true by default)
 
 [tool.setuptools.package-data]
-# Examples
-# "*" = ["*.txt"]
-#my_package = ["*.txt", "*.rst"]
-#my_package.data = ["*.txt", "*.rst"]  # for subfolder of my_package
 ezpadova = ['*.json']
 
 [project.optional-dependencies]
@@ -47,7 +43,6 @@ ezpadova = ['*.json']
 testing = [
     "pytest",
     "pytest-doctestplus",
-    "ruff",
     "codecov",
     "pytest-cov"]
 
