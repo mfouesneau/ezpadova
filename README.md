@@ -24,14 +24,6 @@ New in version 2.0
 
 Available photometric systems, parameters, and default values: [see internal documentation](src/ezpadova/parsec.md)
 
-## TODOs:
-
-* [x] add a function to resample evolution stages
-* [x] add a quick and dirty interpolator
-* [ ] make the documentation website (API, etc.)
-* [ ] create and merge PR
-* [ ] make a release package
-
 Installation
 ------------
 Install with pip
