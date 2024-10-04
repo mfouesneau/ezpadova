@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Tuple
 
@@ -758,9 +759,34 @@ def validate_query_parameter(**kw):
         raise ValueError(f'Invalid photometric system version: {kw['photsys_version']}')
 
 
-if __name__ == "__main__":
-    update_config()
-    with open("config.json", "w") as f:
-        json.dump(configuration, f, indent=4)
-    with open("config.md", "w") as f:
+def reload_configuration():
+    """
+    Reloads the configuration from a JSON file.
+
+    This function determines the base directory of the current file and constructs
+    the path to the configuration file named 'config.json'. If the configuration file
+    exists, it loads the configuration from the file and updates the global configuration
+    dictionary. If the configuration file does not exist, it calls the `update_config`
+    function to create a new configuration and writes it to the 'config.json' file.
+
+    Raises:
+        FileNotFoundError: If the configuration file does not exist and `update_config`
+                           fails to create a new configuration.
+        json.JSONDecodeError: If the configuration file contains invalid JSON.
+    """
+    base_directory = os.path.dirname(os.path.abspath(__file__))
+    config_file = os.path.join(base_directory, "parsec.json")
+    documentation_file = os.path.join(base_directory, "parsec.md")
+    if os.path.isfile(config_file):
+        with open(config_file) as f:
+            configuration.update(json.load(f))
+    else:
+        update_config()
+        with open(config_file, "w") as f:
+            json.dump(configuration, f, indent=4)
+    with open(documentation_file, "w") as f:
         f.write(generate_doc())
+
+
+if __name__ == "__main__":
+    reload_configuration()
