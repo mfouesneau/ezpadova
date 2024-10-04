@@ -11,9 +11,6 @@ python variable.
 
 This package has been tested on python 3.9, 3.10, 3.11, 3.12 through the github actions CI.
 
-:version: 2.0
-:author: MF
-
 New in version 2.0
 ------------------
 * Updated the interface to the new PADOVA website (i.e. >=3.8) [minor changes in the form format from 3.7]
@@ -31,6 +28,8 @@ Available photometric systems, parameters, and default values: [see internal doc
 * [ ] add a function to resample evolution stages
 * [ ] add a quick and dirty interpolator
 * [ ] make the documentation website (API, etc.)
+* [ ] create and merge PR
+* [ ] make a release package
 
 Installation
 ------------
