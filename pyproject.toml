@@ -7,7 +7,9 @@ requires-python = ">=3.9"
 dependencies = [
     "requests",
     "pandas",
-    "beautifulsoup4"
+    "beautifulsoup4",
+    "numpy",
+    "scipy",
 ]
 authors = [{name="Morgan Fouesneau"}]
 classifiers=[
@@ -53,6 +55,13 @@ ci = [
   "isort"]
 
 docs = [
-  "sphinx",
-  "sphinx-automodapi",
+  "sphinx>=4.4.0",
+  "sphinx-book-theme>=0.3.3",
+  "sphinx-automodapi>=0.14",
+  "sphinx_copybutton>=0.5",
+  "sphinx-mdinclude>=0.6",
+  "myst-nb==0.16.0",
+  # for syntax highlighting (https://nbsphinx.readthedocs.io/en/0.8.0/installation.html#Pygments-Lexer-for-Syntax-Highlighting)
+  "IPython>=8.0",
+  "matplotlib",
   "numpydoc"]
