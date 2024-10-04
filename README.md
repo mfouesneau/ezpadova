@@ -19,14 +19,15 @@ New in version 2.0
 * Most of the code has been rewritten to be more robust and easier to maintain. In particular the parsing of the online form has been improved.
 * Many integration tests to keep checking the package interface.
 * The output format is now a `pandas.DataFrame` instead of the internal format. (though previous aliases of columns are no more available)
-* Documentation has been updated and (hopefully) improved.
+* added `resample_evolution_phase` function to resample the `label` into a continuous evolution phase instead of discrete labels.
+* Documentation has been updated and (hopefully) improved. -- _more in progress_
 
 Available photometric systems, parameters, and default values: [see internal documentation](src/ezpadova/parsec.md)
 
 ## TODOs:
 
-* [ ] add a function to resample evolution stages
-* [ ] add a quick and dirty interpolator
+* [x] add a function to resample evolution stages
+* [x] add a quick and dirty interpolator
 * [ ] make the documentation website (API, etc.)
 * [ ] create and merge PR
 * [ ] make a release package

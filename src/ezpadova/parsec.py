@@ -5,6 +5,7 @@ from typing import Tuple, Union
 from urllib.request import urlopen
 
 import pandas as pd
+import numpy as np
 import requests
 
 from .config import configuration, validate_query_parameter
@@ -188,7 +189,38 @@ def get_isochrones(
         return res
 
 
-if __name__ == "__main__":
-    df = get_isochrones(default_ranges=True)
-    print(df)
-    print(df.attrs["comment"])
+def resample_evolution_label(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Resample the evolution label in the given DataFrame.
+
+    This function processes the input DataFrame by grouping it based on 'logAge' and 'MH' columns,
+    and then resamples the 'label' column to add a continuous 'evol' column. The 'evol' column
+    represents the evolution field with continuous quantities.
+
+    parameters:
+        data (pd.DataFrame): The input DataFrame containing the 'logAge', 'MH', and 'label' columns.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the added 'evol' column containing continuous quantities.
+    """
+
+    def _resample_one_isochrone(current: pd.DataFrame) -> pd.DataFrame:
+        """
+        Add `evol` as an evolution field which expands the label into continuous quantities.
+        """
+        current["evol"] = 0.0
+        for label in set(current["label"].values):
+            sub = current[current.label == label]
+            delta = 1.0 / len(sub)
+            evol = label + np.arange(0, 1 - 0.5 * delta, delta)
+            current.loc[current.label == label, "evol"] = evol
+        return current
+
+    iso_ = [
+        _resample_one_isochrone(k[1]).reset_index()
+        for k in data.groupby(["logAge", "MH"])
+    ]
+    new_data = pd.concat(iso_, axis=0)
+    if "index" in new_data.columns:
+        new_data.drop("index", axis=1, inplace=True)
+    return new_data

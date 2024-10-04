@@ -58,9 +58,11 @@ class QuickInterpolator:
         if isinstance(fname, pd.DataFrame):
             isochrones = fname
         else:
-            with open(fname, "r") as f:
+            with open(fname, "rb") as f:
                 isochrones = parse_result(f)
-        self.data = isochrones.set_index(["logAge", "MH"]).drop("index", axis=1)
+        self.data = isochrones.set_index(["logAge", "MH"])
+        if "index" in self.data.columns:
+            self.data.drop("index", axis=1, inplace=True)
         self.coords = {
             "logAge": np.unique(isochrones.logAge),
             "MH": np.unique(isochrones.MH),
