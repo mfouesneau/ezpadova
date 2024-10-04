@@ -25,7 +25,7 @@ def deprecated_replacedby(replace_by):
 
 def get_file_archive_type(
     filename: Union[str, BytesIO], stream: bool = False
-) -> str | None:
+) -> Union[str, None]:
     """Detect the type of a potentially compressed file.
 
     This function checks the beginning of a file to determine if it is compressed
