@@ -752,40 +752,40 @@ def validate_query_parameter(**kw):
 
     track_parsec = [k[1] for k in configuration["track_parsec"]["track_parsec"]]
     if kw["track_parsec"] not in track_parsec:
-        raise ValueError(f'Invalid isochrone kind: {kw['track_parsec']}')
+        raise ValueError(f'Invalid isochrone kind: {kw["track_parsec"]}')
 
     if not 0 <= float(kw["track_omegai"]) <= 0.99:
         raise ValueError(
-            f'Invalid initial rotation velocity. Must be between 0 and 0.99. Found {kw['track_omegai']} instead.'
+            f'Invalid initial rotation velocity. Must be between 0 and 0.99. Found {kw["track_omegai"]} instead.'
         )
 
     track_colibri = [k[1] for k in configuration["track_parsec"]["track_colibri"]]
     if kw["track_colibri"] not in track_colibri:
-        raise ValueError(f'Invalid isochrone kind: {kw['track_colibri']}')
+        raise ValueError(f'Invalid isochrone kind: {kw["track_colibri"]}')
 
     dust_sourceC = [k[1] for k in configuration["dust_sourceC"]]
     if kw["dust_sourceC"] not in dust_sourceC:
-        raise ValueError(f'Invalid dust source: {kw['dust_sourceC']}')
+        raise ValueError(f'Invalid dust source: {kw["dust_sourceC"]}')
 
     dust_sourceM = [k[1] for k in configuration["dust_sourceM"]]
     if kw["dust_sourceM"] not in dust_sourceM:
-        raise ValueError(f'Invalid dust source: {kw['dust_sourceM']}')
+        raise ValueError(f'Invalid dust source: {kw["dust_sourceM"]}')
 
     extinction_coef = [k[1] for k in configuration["extinction"]["extinction_coeff"]]
     if kw["extinction_coeff"] not in extinction_coef:
-        raise ValueError(f'Invalid extinction coefficient: {kw['extinction_coeff']}')
+        raise ValueError(f'Invalid extinction coefficient: {kw["extinction_coeff"]}')
 
     extinction_curve = [k[1] for k in configuration["extinction"]["extinction_curve"]]
     if kw["extinction_curve"] not in extinction_curve:
-        raise ValueError(f'Invalid extinction curve: {kw['extinction_curve']}')
+        raise ValueError(f'Invalid extinction curve: {kw["extinction_curve"]}')
 
     kind_LPV = [k[1] for k in configuration["lpvs"]["kind_LPV"]]
     if kw["kind_LPV"] not in kind_LPV:
-        raise ValueError(f'Invalid LPV kind: {kw['kind_LPV']}')
+        raise ValueError(f'Invalid LPV kind: {kw["kind_LPV"]}')
 
     photsys_version = [k[1] for k in configuration["photsys_file"]["photsys_version"]]
     if kw["photsys_version"] not in photsys_version:
-        raise ValueError(f'Invalid photometric system version: {kw['photsys_version']}')
+        raise ValueError(f'Invalid photometric system version: {kw["photsys_version"]}')
 
 
 if __name__ == "__main__":
