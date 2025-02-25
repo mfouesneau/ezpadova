@@ -15,7 +15,7 @@ from .tools import dedent
 
 # URL of the webpage
 configuration = dict(
-    url="http://stev.oapd.inaf.it/cgi-bin/cmd",
+    url="https://stev.oapd.inaf.it/cgi-bin/cmd",
     defaults={
         "cmd_version": "3.8",
         "track_omegai": "0.00",
