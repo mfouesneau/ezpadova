@@ -105,7 +105,7 @@ def query(**kwargs) -> bytes:
     """
     print(f"Querying {configuration['url']}...")
     kw = build_query(**kwargs)
-    req = requests.post(configuration["url"], data=kw, timeout=60, allow_redirects=True)
+    req = requests.post(configuration["url"], params=kw, timeout=120, allow_redirects=True)
     if req.status_code != 200:
         raise RuntimeError("Server Response is incorrect")
     else:
@@ -123,9 +123,9 @@ def query(**kwargs) -> bytes:
             r = zlib.decompress(bytes(r), 15 + 32)
         return r
     else:
-        print(configuration["url"], query)
+        print("URL:" + configuration["url"] + req.request.path_url + '\n')
         print(req.text)
-        raise RuntimeError("Server Response is incorrect")
+        raise RuntimeError("Server Response not expected. Error in data retrieval.")
 
 
 def get_isochrones(
