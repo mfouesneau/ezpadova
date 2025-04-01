@@ -49,96 +49,98 @@ _only available for PARSEC 1.2S_
 
 | value | description |
 | --- | --- |
-| YBC_2mass_spitzer | 2MASS + Spitzer (IRAC+MIPS) |
-| YBC_2mass_spitzer_wise | 2MASS + Spitzer (IRAC+MIPS) + WISE |
-| YBC_2mass | 2MASS JHKs |
-| YBC_ogle_2mass_spitzer | OGLE + 2MASS + Spitzer (IRAC+MIPS) |
-| YBC_ubvrijhk | UBVRIJHK (cf. Maiz-Apellaniz 2006 + Bessell 1990) |
-| YBC_bessell | UBVRIJHKLMN (cf. Bessell 1990 + Bessell & Brett 1988) |
-| YBC_akari | AKARI |
-| YBC_batc | BATC |
-| YBC_megacam_wircam | CFHT Megacam + Wircam (all ABmags) |
-| YBC_wircam | CFHT Wircam |
-| YBC_megacam_post2014 | CFHT/Megacam post-2014 u*g'r'i'z' |
-| YBC_megacam | CFHT/Megacam pre-2014 u*g'r'i'z' |
-| YBC_ciber | CIBER |
-| YBC_clue_galex | CLUE + GALEX (Vegamags) |
-| YBC_CSST | CSST (ABmags) |
-| YBC_decam | DECAM (ABmags) |
-| YBC_denis | DENIS |
-| YBC_dmc14 | DMC 14 filters |
-| YBC_dmc15 | DMC 15 filters |
-| YBC_eis | ESO/EIS (WFI UBVRIZ + SOFI JHK) |
-| YBC_wfi | ESO/WFI |
-| YBC_wfi2 | ESO/WFI2 |
-| YBC_euclid_nisp | Euclid VIS+NISP (ABmags) |
-| YBC_galex_sloan | GALEX FUV+NUV (Vegamag) + SDSS ugriz (ABmags) |
-| YBC_galex | GALEX FUV+NUV + Johnson's UBV (Maiz-Apellaniz version), all Vegamags |
-| YBC_gaia_tycho2_2mass | Gaia DR1 + Tycho2 + 2MASS (all Vegamags) |
-| YBC_gaiaDR2_tycho2_2mass | Gaia DR2 + Tycho2 + 2MASS (all Vegamags, Gaia passbands from Evans et al. 2018) |
-| YBC_gaiaDR2weiler_tycho2_2mass | Gaia DR2 + Tycho2 + 2MASS (all Vegamags, Gaia passbands from Weiler 2018) |
-| YBC_gaiaEDR3 | Gaia EDR3 (all Vegamags, Gaia passbands from ESA/Gaia website) |
-| YBC_gaia | Gaia's DR1 G, G_BP and G_RP (Vegamags) |
-| YBC_gaiaDR2 | Gaia's DR2 G, G_BP and G_RP (Vegamags, Gaia passbands from Evans et al. 2018) |
-| YBC_gaiaDR2maiz | Gaia's DR2 G, G_BP and G_RP (Vegamags, Gaia passbands from Maiz-Apellaniz and Weiler 2018) |
-| YBC_gaiaDR2weiler | Gaia's DR2 G, G_BP and G_RP (Vegamags, Gaia passbands from Weiler 2018) |
-| YBC_UVbright | HST+GALEX+Swift/UVOT UV filters |
-| YBC_acs_hrc | HST/ACS HRC |
-| YBC_acs_wfc_pos04jul06 | HST/ACS WFC (c.f. 2007 revision, pos-04jul06) |
-| YBC_acs_wfc_202101 | HST/ACS WFC - updated filters and zeropoints, 2021 |
-| YBC_nicmosab | HST/NICMOS AB |
-| YBC_nicmosvega | HST/NICMOS Vega |
-| YBC_stis | HST/STIS imaging mode, Vegamag |
-| YBC_wfc3_wideverywide | HST/WFC3 all W+LP+X filters (UVIS1+IR, final throughputs) |
-| YBC_wfc3_202101_verywide | HST/WFC3 long-pass and extremely wide filters (UVIS) - updated filters and zeropoints, 2021 |
-| YBC_wfc3_202101_medium | HST/WFC3 medium filters (UVIS+IR) - updated filters and zeropoints, 2021 |
-| YBC_wfc3_202101_wide | HST/WFC3 wide filters (UVIS+IR) - updated filters and zeropoints, 2021 |
-| YBC_wfpc2 | HST/WFPC2 (Vegamag, cf. Holtzman et al. 1995) |
-| YBC_hipparcos | Hipparcos+Tycho+Gaia DR1 (Vegamags) |
-| YBC_int_wfc | INT/WFC (Vegamag) |
-| YBC_iphas | IPHAS |
-| YBC_jwst_miri_wide | JWST MIRI wide filters, Vegamags |
-| YBC_jwst_nircam_wide | JWST NIRCam wide+verywide filters, Vegamags |
+| 2mass_spitzer | 2MASS + Spitzer (IRAC+MIPS) |
+| 2mass_spitzer_wise | 2MASS + Spitzer (IRAC+MIPS) + WISE |
+| 2mass | 2MASS JHKs |
+| ogle_2mass_spitzer | OGLE + 2MASS + Spitzer (IRAC+MIPS) |
+| ubvrijhk | UBVRIJHK (cf. Maiz-Apellaniz 2006 + Bessell 1990) |
+| bessell | UBVRIJHKLMN (cf. Bessell 1990 + Bessell & Brett 1988) |
+| akari | AKARI |
+| batc | BATC |
+| megacam_wircam | CFHT Megacam + Wircam (all ABmags) |
+| wircam | CFHT Wircam |
+| megacam_post2014 | CFHT/Megacam post-2014 u*g'r'i'z' |
+| megacam | CFHT/Megacam pre-2014 u*g'r'i'z' |
+| ciber | CIBER |
+| clue_galex | CLUE + GALEX (Vegamags) |
+| CSST | CSST (ABmags) |
+| decam | DECAM (ABmags) |
+| denis | DENIS |
+| dmc14 | DMC 14 filters |
+| dmc15 | DMC 15 filters |
+| eis | ESO/EIS (WFI UBVRIZ + SOFI JHK) |
+| wfi | ESO/WFI |
+| wfi2 | ESO/WFI2 |
+| euclid_nisp | Euclid VIS+NISP (ABmags) |
+| galex_sloan | GALEX FUV+NUV (Vegamag) + SDSS ugriz (ABmags) |
+| galex | GALEX FUV+NUV + Johnson's UBV (Maiz-Apellaniz version), all Vegamags |
+| gaia_tycho2_2mass | Gaia DR1 + Tycho2 + 2MASS (all Vegamags) |
+| gaiaDR2_tycho2_2mass | Gaia DR2 + Tycho2 + 2MASS (all Vegamags, Gaia passbands from Evans et al. 2018) |
+| gaiaDR2weiler_tycho2_2mass | Gaia DR2 + Tycho2 + 2MASS (all Vegamags, Gaia passbands from Weiler 2018) |
+| gaiaEDR3 | Gaia EDR3 (all Vegamags, Gaia passbands from ESA/Gaia website) |
+| gaia | Gaia's DR1 G, G_BP and G_RP (Vegamags) |
+| gaiaDR2 | Gaia's DR2 G, G_BP and G_RP (Vegamags, Gaia passbands from Evans et al. 2018) |
+| gaiaDR2maiz | Gaia's DR2 G, G_BP and G_RP (Vegamags, Gaia passbands from Maiz-Apellaniz and Weiler 2018) |
+| gaiaDR2weiler | Gaia's DR2 G, G_BP and G_RP (Vegamags, Gaia passbands from Weiler 2018) |
+| UVbright | HST+GALEX+Swift/UVOT UV filters |
+| acs_hrc | HST/ACS HRC |
+| acs_wfc_pos04jul06 | HST/ACS WFC (c.f. 2007 revision, pos-04jul06) |
+| acs_wfc_202101 | HST/ACS WFC - updated filters and zeropoints, 2021 |
+| nicmosab | HST/NICMOS AB |
+| nicmosvega | HST/NICMOS Vega |
+| stis | HST/STIS imaging mode, Vegamag |
+| wfc3_wideverywide | HST/WFC3 all W+LP+X filters (UVIS1+IR, final throughputs) |
+| wfc3_202101_verywide | HST/WFC3 long-pass and extremely wide filters (UVIS) - updated filters and zeropoints, 2021 |
+| wfc3_202101_medium | HST/WFC3 medium filters (UVIS+IR) - updated filters and zeropoints, 2021 |
+| wfc3_202101_wide | HST/WFC3 wide filters (UVIS+IR) - updated filters and zeropoints, 2021 |
+| wfpc2 | HST/WFPC2 (Vegamag, cf. Holtzman et al. 1995) |
+| hipparcos | Hipparcos+Tycho+Gaia DR1 (Vegamags) |
+| int_wfc | INT/WFC (Vegamag) |
+| iphas | IPHAS |
+| jwst_miri_wide | JWST MIRI wide filters, Vegamags |
+| jwst_nircam_wide | JWST NIRCam wide+verywide filters, Vegamags |
 | jwst_nircam_widemedium_nov22 | JWST NIRCam wide+verywide+medium filters (Nov 2022), Vegamags |
-| YBC_jwst_nircam_widemedium | JWST NIRCam wide+verywide+medium filters, Vegamags |
+| jwst_nircam_widemedium | JWST NIRCam wide+verywide+medium filters, Vegamags |
 | jwst_niriss_nov22 | JWST NIRISS filters (Nov 2022), Vegamags |
-| YBC_jwst_nirspec | JWST Nirspec filters, Vegamags |
-| YBC_kepler | Kepler + SDSS griz + DDO51 (in ABmags) |
-| YBC_kepler_2mass | Kepler + SDSS griz + DDO51 (in ABmags) + 2MASS (~Vegamag) |
-| YBC_vst_vista | KiDS/VIKING (VST/OMEGAM + VISTA/VIRCAM, all ABmags) |
-| YBC_lbt_lbc | LBT/LBC (Vegamag) |
-| YBC_lsst_wfirst_proposed2017 | LSST (ABmags) + WFIRST proposed filters (Vegamags) |
-| YBC_lsst | LSST ugrizY, March 2012 total filter throughputs (all ABmags) |
+| jwst_nirspec | JWST Nirspec filters, Vegamags |
+| jwst_fnl | JWST custom, Vegamags |
+| kepler | Kepler + SDSS griz + DDO51 (in ABmags) |
+| kepler_2mass | Kepler + SDSS griz + DDO51 (in ABmags) + 2MASS (~Vegamag) |
+| vst_vista | KiDS/VIKING (VST/OMEGAM + VISTA/VIRCAM, all ABmags) |
+| lbt_lbc | LBT/LBC (Vegamag) |
+| lsst_wfirst_proposed2017 | LSST (ABmags) + WFIRST proposed filters (Vegamags) |
+| lsst | LSST ugrizY, March 2012 total filter throughputs (all ABmags) |
 | lsstDP0 | LSST ugrizy, Oct 2017 total filter throughputs for DP0 (all ABmags) |
 | lsstR1.9 | LSST ugrizy, Sept 2023, total filter throughputs R1.9 (all ABmags) |
-| YBC_noao_ctio_mosaic2 | NOAO/CTIO/MOSAIC2 (Vegamag) |
-| YBC_ogle | OGLE-II |
-| YBC_panstarrs1 | Pan-STARRS1 |
+| noao_ctio_mosaic2 | NOAO/CTIO/MOSAIC2 (Vegamag) |
+| ogle | OGLE-II |
+| panstarrs1 | Pan-STARRS1 |
+| gulli | Pan-STARRS1 + narrow Omegacam filters (ABmags) |
 | Roman2021 | Roman (ex-WFIRST) 2021 filters, Vegamags |
-| YBC_splus | S-PLUS (Vegamags), revised on Nov. 2017 |
-| YBC_sloan | SDSS ugriz |
-| YBC_sloan_2mass | SDSS ugriz + 2MASS JHKs |
-| YBC_sloan_ukidss | SDSS ugriz + UKIDSS ZYJHK |
-| YBC_swift_uvot | SWIFT/UVOT UVW2, UVM2, UVW1,u (Vegamag) |
-| YBC_skymapper | SkyMapper (ABmags) |
-| YBC_spitzer | Spitzer IRAC+MIPS |
-| YBC_stroemgren | Stroemgren-Crawford |
-| YBC_hsc | Subaru/Hyper Suprime-Cam (ABmags) |
-| YBC_suprimecam | Subaru/Suprime-Cam (ABmags) |
+| splus | S-PLUS (Vegamags), revised on Nov. 2017 |
+| sloan | SDSS ugriz |
+| sloan_2mass | SDSS ugriz + 2MASS JHKs |
+| sloan_ukidss | SDSS ugriz + UKIDSS ZYJHK |
+| swift_uvot | SWIFT/UVOT UVW2, UVM2, UVW1,u (Vegamag) |
+| skymapper | SkyMapper (ABmags) |
+| spitzer | Spitzer IRAC+MIPS |
+| stroemgren | Stroemgren-Crawford |
+| hsc | Subaru/Hyper Suprime-Cam (ABmags) |
+| suprimecam | Subaru/Suprime-Cam (ABmags) |
 | SuperBIT | SuperBIT, all ABmags |
-| YBC_TESS_2mass | TESS + 2MASS (Vegamags) |
-| YBC_TESS_2mass_kepler | TESS + 2MASS (Vegamags) + Kepler + SDSS griz + DDO51 (in ABmags) |
-| YBC_ukidss | UKIDSS ZYJHK (Vegamag) |
-| YBC_uvit | UVIT (all ABmags) |
-| YBC_visir | VISIR |
-| YBC_vista | VISTA ZYJHKs (Vegamag) |
-| YBC_vphas | VPHAS+ (ABmags) |
-| YBC_vst_omegacam | VST/OMEGACAM (ABmag) |
-| YBC_vilnius | Vilnius |
-| YBC_wfc3_uvisCaHK | WFC3/UVIS around CaHK |
-| YBC_washington_ddo51 | Washington CMT1T2 + DDO51 |
-| YBC_ztf | ZTF (ABmags) |
-| YBC_deltaa | deltaa (Paunzen) + UBV (Maiz-Apellaniz), in Vegamags |
+| TESS_2mass | TESS + 2MASS (Vegamags) |
+| TESS_2mass_kepler | TESS + 2MASS (Vegamags) + Kepler + SDSS griz + DDO51 (in ABmags) |
+| ukidss | UKIDSS ZYJHK (Vegamag) |
+| uvit | UVIT (all ABmags) |
+| visir | VISIR |
+| vista | VISTA ZYJHKs (Vegamag) |
+| vphas | VPHAS+ (ABmags) |
+| vst_omegacam | VST/OMEGACAM (ABmag) |
+| vilnius | Vilnius |
+| wfc3_uvisCaHK | WFC3/UVIS around CaHK |
+| washington_ddo51 | Washington CMT1T2 + DDO51 |
+| ztf | ZTF (ABmags) |
+| deltaa | deltaa (Paunzen) + UBV (Maiz-Apellaniz), in Vegamags |
 
 
 ## Stellar Atmospheres `photsys_version`
@@ -189,6 +191,7 @@ _only available for PARSEC 1.2S_
 | 1 | 1. Periods from  Trabucchi et al. (2017) . |
 | 2 | 2. Periods from  Trabucchi et al. (2019) . |
 | 3 | 3. Periods from  Trabucchi et al. (2021) . |
+| 4 | 4. Periods and dominant regime from  Trabucchi et al. (2021) . |
 
 
 ## IMF `imf_file`
