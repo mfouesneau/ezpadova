@@ -257,11 +257,13 @@ def _get_photsys_info(forms: BeautifulSoup) -> Tuple[dict, dict]:
     comps = {}
     defaults_ = {}
     for key, value in comps_raw.items():
-        key = key.replace("tab_mag_odfnew/tab_mag_", "").replace(".dat", "")
+        #key = key.replace("tab_mag_odfnew/tab_mag_", "").replace(".dat", "")
+        key = key.split('/')[-1].replace('tab_mag_', '').replace(".dat", "")
         if key:
             comps[key] = value
     for key, value in defaults.items():
-        value = value.replace("tab_mag_odfnew/tab_mag_", "").replace(".dat", "")
+        # value = value.replace("tab_mag_odfnew/tab_mag_", "").replace(".dat", "")
+        value = value.split('/')[-1].replace('tab_mag_', '').replace(".dat", "")
         if key:
             defaults_[key] = value
 
