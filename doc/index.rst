@@ -24,7 +24,7 @@ New in version 2.0
 * Most of the code has been rewritten to be more robust and easier to maintain. In particular, the parsing of the online form has been improved.
 * Many integration tests to keep checking the package interface.
 * The output format is now a `pandas.DataFrame` instead of the internal format. (though previous aliases of columns are no longer available)
-* added :func:`ezpadova.parsec.resample_evolution_phase` function to resample the `label` into a continuous evolution phase instead of discrete labels.
+* added :func:`ezpadova.parsec.resample_evolution_label` function to resample the `label` into a continuous evolution phase instead of discrete labels.
 * added :func:`ezpadova.interpolate.QuickInterpolator` to quickly interpolate isochrones over (logage, MH, evolution phase)
 * Documentation has been updated and (hopefully) improved.
 
