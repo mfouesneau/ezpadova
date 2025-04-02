@@ -19,12 +19,12 @@ This package has been tested on Python 3.9, 3.10, 3.11, 3.12, and 3.13 through t
 New in version 2.0
 ------------------
 * Updated the interface to the new PADOVA website (i.e. >=3.8) [minor changes in the form format from 3.7]
-* New function :func:`ezpadova.get_isochrones` does all the slices directly (combines `get_Z_isochrones`, `get_t_isochrones`, and `get_one_isochrone` which are now deprecated.)
-* :func:`ezpadova.`get_isochrones` handles ranges of ages, log ages, Z, and [M/H] as inputs (see documentation).
+* New function :func:`ezpadova.parsec.get_isochrones` does all the slices directly (combines `get_Z_isochrones`, `get_t_isochrones`, and `get_one_isochrone` which are now deprecated.)
+* :func:`ezpadova.parsec.get_isochrones` handles ranges of ages, log ages, Z, and [M/H] as inputs (see documentation).
 * Most of the code has been rewritten to be more robust and easier to maintain. In particular, the parsing of the online form has been improved.
 * Many integration tests to keep checking the package interface.
 * The output format is now a `pandas.DataFrame` instead of the internal format. (though previous aliases of columns are no longer available)
-* added :func:`ezpadova.resample_evolution_phase` function to resample the `label` into a continuous evolution phase instead of discrete labels.
+* added :func:`ezpadova.parsec.resample_evolution_phase` function to resample the `label` into a continuous evolution phase instead of discrete labels.
 * added :func:`ezpadova.interpolate.QuickInterpolator` to quickly interpolate isochrones over (logage, MH, evolution phase)
 * Documentation has been updated and (hopefully) improved.
 
