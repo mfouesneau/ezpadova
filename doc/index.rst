@@ -25,7 +25,9 @@ New in version 2.0
 * Many integration tests to keep checking the package interface.
 * The output format is now a `pandas.DataFrame` instead of the internal format. (though previous aliases of columns are no longer available)
 * added :func:`ezpadova.resample_evolution_phase` function to resample the `label` into a continuous evolution phase instead of discrete labels.
-* Documentation has been updated and (hopefully) improved. -- more in progress
+* added :func:`ezpadova.interpolate.QuickInterpolator` to quickly interpolate isochrones over (logage, MH, evolution phase)
+* Documentation has been updated and (hopefully) improved.
+
 
 Available photometric systems, parameters, and default values: :ref:`parsec parameters`
 
