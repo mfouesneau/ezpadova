@@ -54,7 +54,7 @@ The following example queries the Padova service to retrieve a set of isochrones
 ```python
 import ezpadova
 import matplotlib.pyplot as plt
-r = ezpadova.get_isochrones(photsys_file='gaiaEDR3', logage=(6, 10, 0.2), MH=(-2, 1, 0.4))```
+r = ezpadova.get_isochrones(photsys_file='gaiaEDR3', logage=(6, 10, 0.2), MH=(-2, 1, 0.4))
 ```
 
 The following example queries the Padova service to retrieve log(age/yr)-space isochrones at solar metallicity and the Gaia eDR3 photometry.
