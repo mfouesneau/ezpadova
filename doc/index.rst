@@ -8,7 +8,7 @@ EZPADOVA -- A python package that allows you to download PADOVA isochrones direc
 .. image:: https://img.shields.io/badge/Parsec_CMD-3.8-green.svg
   :target: http://stev.oapd.inaf.it/cgi-bin/cmd_3.8
 
-.. image:: https://img.shields.io/badge/python-3.9,_3.10,_3.11,_3.12-blue.svg
+.. image:: https://img.shields.io/badge/python-3.9,_3.10,_3.11,_3.12,_3.13-blue.svg
     :target: https://www.python.org/
 
 This small package provides a direct interface to the PADOVA/PARSEC isochrone webpage (http://stev.oapd.inaf.it/cgi-bin/cmd).
