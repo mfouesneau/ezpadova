@@ -46,23 +46,22 @@ cd ezpadova
 python -m pip install . 
 ```
 
-
-EXAMPLE USAGE (deprecated)
+Example Usage
 -------------
+Since v2.0, ezpadova combines all queries through a single function, `get_isochrones`. 
 
-* Basic example of downloading a sequence of isochrones, plotting, saving
+The following example queries the Padova service to retrieve a set of isochrones spanning ages and metallicities
 ```python
->>> from ezpadova import get_t_isochrones
->>> r = get_t_isochrones(6.0, 7.0, 0.05, 0.02)
-
->>> import pylab as plt
->>> plt.scatter(r['logT'], r['logL'], c=r['logA'], edgecolor='None')
->>> plt.show()
-
+import ezpadova
+import matplotlib.pyplot as plt
+r = ezpadova.get_isochrones(photsys_file='gaiaEDR3', logage=(6, 10, 0.2), MH=(-2, 1, 0.4))```
 ```
 
-* getting only one isochrone
-```python 
->>> from ezpadova import get_one_isochrone
->>> r = get_one_isochrone(1e7, 0.02, model='parsec12s', phot='YBC_spitzer')
+The following example queries the Padova service to retrieve log(age/yr)-space isochrones at solar metallicity and the Gaia eDR3 photometry.
+```python
+import ezpadova
+import matplotlib.pyplot as plt
+r = ezpadova.get_isochrones(logage=(6, 7, 0.1), MH=(0, 0, 0), photsys_file='gaiaEDR3')
+plt.scatter(r['logTe'], r['logL'], c=r['logAge'], edgecolor='None')
+plt.show()
 ```
