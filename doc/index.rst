@@ -12,19 +12,19 @@ EZPADOVA -- A python package that allows you to download PADOVA isochrones direc
     :target: https://www.python.org/
 
 This small package provides a direct interface to the PADOVA/PARSEC isochrone webpage (http://stev.oapd.inaf.it/cgi-bin/cmd).
-It compiles the URL needed to query the website and retrives the data into a python variable.
+It compiles the URL needed to query the website and retrieves the data into a Python variable.
 
-This package has been tested on python 3.9, 3.10, 3.11, 3.12 through the github actions CI.
+This package has been tested on Python 3.9, 3.10, 3.11, 3.12, and 3.13 through the GitHub actions CI.
 
 New in version 2.0
 ------------------
 * Updated the interface to the new PADOVA website (i.e. >=3.8) [minor changes in the form format from 3.7]
-* New function `get_isochrone` does all the slices directly (combines `get_Z_isochrones`, `get_t_isochrones`, and `get_one_isochrone` which are now deprecated.)
-* `get_isochrone` handles ages, log ages, Z and [M/H] as inputs (see documentation).
-* Most of the code has been rewritten to be more robust and easier to maintain. In particular the parsing of the online form has been improved.
+* New function :func:`ezpadova.get_isochrones` does all the slices directly (combines `get_Z_isochrones`, `get_t_isochrones`, and `get_one_isochrone` which are now deprecated.)
+* :func:`ezpadova.`get_isochrones` handles ranges of ages, log ages, Z, and [M/H] as inputs (see documentation).
+* Most of the code has been rewritten to be more robust and easier to maintain. In particular, the parsing of the online form has been improved.
 * Many integration tests to keep checking the package interface.
-* The output format is now a `pandas.DataFrame` instead of the internal format. (though previous aliases of columns are no more available)
-* added `resample_evolution_phase` function to resample the `label` into a continuous evolution phase instead of discrete labels.
+* The output format is now a `pandas.DataFrame` instead of the internal format. (though previous aliases of columns are no longer available)
+* added :func:`ezpadova.resample_evolution_phase` function to resample the `label` into a continuous evolution phase instead of discrete labels.
 * Documentation has been updated and (hopefully) improved. -- more in progress
 
 Available photometric systems, parameters, and default values: :ref:`parsec parameters`
@@ -50,9 +50,6 @@ Installation
 Example Usage
 -------------
 Since v2.0, ezpadova combines all queries through a single function, :func:`ezpadova.parsec.get_isochrones`. 
-
-.. deprecated:: 2.0
-    The following examples are deprecated and will be removed in the next version. Please use the new interface :func:`ezpadova.parsec.get_isochrones` instead.
 
 The following example queries the Padova service to retrieve a set of isochrones spanning ages and metallicities.
 
