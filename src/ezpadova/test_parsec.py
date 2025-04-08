@@ -73,3 +73,7 @@ def test_build_query():
 
 def test_end_to_end():
     get_isochrones(default_ranges=True)
+
+
+def test_readme_example():
+    get_isochrones(photsys_file='gaiaEDR3', logage=(6, 10, 0.2), MH=(-2, 1, 0.4))
