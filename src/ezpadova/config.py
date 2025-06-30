@@ -4,7 +4,7 @@ It provides functions to update the configuration from the CMD webpage and valid
 It also contains the default values for the configuration parameters.
 """
 import os
-from typing import Tuple
+from typing import Tuple, Union
 
 import requests
 import json
@@ -103,7 +103,7 @@ def reload_configuration():
         f.write(generate_doc())
 
 
-def _get_siblings_text(element: BeautifulSoup  | ResultSet ) -> str:
+def _get_siblings_text(element: Union[BeautifulSoup, ResultSet] ) -> str:
     """
     Extracts and concatenates the text content from the sibling elements of the given BeautifulSoup element
     until another form element is encountered.
@@ -166,7 +166,7 @@ def _parse_select_info(
 
 
 def _parse_radio_info(
-    forms: BeautifulSoup | ResultSet, name: str, elt_class: str, elt_type: str
+    forms: Union[BeautifulSoup, ResultSet], name: str, elt_class: str, elt_type: str
 ) -> Tuple[dict, dict]:
     """
     Parses radio button information from HTML forms.
@@ -204,7 +204,7 @@ def _parse_radio_info(
 
 
 def _parse_text_info(
-    forms: BeautifulSoup | ResultSet, name: str, elt_class: str, elt_type: str
+    forms: Union[BeautifulSoup, ResultSet], name: str, elt_class: str, elt_type: str
 ) -> Tuple[dict, dict]:
     """
     Parses text information from HTML forms.
@@ -240,7 +240,7 @@ def _parse_text_info(
     return comps, defaults
 
 
-def _get_photsys_info(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
+def _get_photsys_info(forms: Union[BeautifulSoup, ResultSet]) -> Tuple[dict, dict]:
     """
     Retrieve photometric systems and their default values from the form.
 
@@ -284,7 +284,7 @@ def _get_photsys_info(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     return comps, defaults_
 
 
-def _get_model_info(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
+def _get_model_info(forms: Union[BeautifulSoup, ResultSet]) -> Tuple[dict, dict]:
     """
     Retrieve model systems from the form.
 
@@ -320,7 +320,7 @@ def _get_model_info(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     return comps, defaults
 
 
-def _get_mdust(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
+def _get_mdust(forms: Union[BeautifulSoup, ResultSet]) -> Tuple[dict, dict]:
     """
     Retrieve dust information for M stars.
 
@@ -345,7 +345,7 @@ def _get_mdust(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     return comps["dust_sourceM"], defaults
 
 
-def _get_cdust(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
+def _get_cdust(forms: Union[BeautifulSoup, ResultSet]) -> Tuple[dict, dict]:
     """
     Retrieve dust information for C stars.
 
@@ -369,7 +369,7 @@ def _get_cdust(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     return comps["dust_sourceC"], defaults
 
 
-def _get_extinction(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
+def _get_extinction(forms: Union[BeautifulSoup, ResultSet]) -> Tuple[dict, dict]:
     """
     Extracts extinction information from the provided BeautifulSoup form.
 
@@ -399,7 +399,7 @@ def _get_extinction(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     return comps, defaults
 
 
-def _get_imf(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
+def _get_imf(forms: Union[BeautifulSoup, ResultSet]) -> Tuple[dict, dict]:
     """
     Extracts and cleans IMF (Initial Mass Function) information from the provided BeautifulSoup form data.
 
@@ -427,7 +427,7 @@ def _get_imf(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     return cleaned, defaults_
 
 
-def _get_age(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
+def _get_age(forms: Union[BeautifulSoup, ResultSet]) -> Tuple[dict, dict]:
     """
     Extracts age-related information from a BeautifulSoup form.
 
@@ -465,7 +465,7 @@ def _get_age(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     return comps, defaults
 
 
-def _get_met(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
+def _get_met(forms: Union[BeautifulSoup, ResultSet]) -> Tuple[dict, dict]:
     """
     Extracts and parses metallicity-related information from the given BeautifulSoup form.
 
