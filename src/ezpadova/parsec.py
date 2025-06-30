@@ -1,5 +1,7 @@
-""" Module for querying the CMD website and parsing the results. """
+"""Module for querying the CMD website and parsing the results."""
+
 import re
+import ssl
 import zlib
 from io import BufferedReader, BytesIO
 from typing import Tuple, Union
@@ -8,6 +10,14 @@ from urllib.request import urlopen
 import pandas as pd
 import numpy as np
 import requests
+
+# Disable SSL warnings when certificate verification is disabled
+try:
+    import urllib3
+
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+except ImportError:
+    pass
 
 from .config import configuration, validate_query_parameter
 from .tools import get_file_archive_type
@@ -105,7 +115,9 @@ def query(**kwargs) -> bytes:
     """
     print(f"Querying {configuration['url']}...")
     kw = build_query(**kwargs)
-    req = requests.post(configuration["url"], params=kw, timeout=120, allow_redirects=True)
+    req = requests.post(
+        configuration["url"], params=kw, timeout=120, allow_redirects=True, verify=False
+    )
     if req.status_code != 200:
         raise RuntimeError("Server Response is incorrect")
     else:
@@ -116,14 +128,18 @@ def query(**kwargs) -> bytes:
     if len(fname) > 0:
         data_url = f"{domain}/tmp/{fname[0]}.dat"
         print(f"Downloading data...{data_url}")
-        bf = urlopen(data_url)
+        # Create SSL context that doesn't verify certificates
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        bf = urlopen(data_url, context=ssl_context)
         r = bf.read()
         typ = get_file_archive_type(r, stream=True)
         if typ is not None:
             r = zlib.decompress(bytes(r), 15 + 32)
         return r
     else:
-        print("URL:" + configuration["url"] + req.request.path_url + '\n')
+        print("URL:" + configuration["url"] + req.request.path_url + "\n")
         print(req.text)
         raise RuntimeError("Server Response not expected. Error in data retrieval.")
 
@@ -144,13 +160,13 @@ def get_isochrones(
         age_yr (Tuple[float, float, float] | None): A triplet of
             numbers representing the lower bound, upper bound, and step size for age
             in years.  Either `age_yr` or `logage` must be provided, but not both.
-        Z (Tuple[float, float, float] | None): 
+        Z (Tuple[float, float, float] | None):
             A triplet of numbers representing the lower bound, upper bound, and step size for metallicity Z.
             Either `Z` or `MH` must be provided, but not both.
-        logage (Tuple[float, float, float] | None): 
+        logage (Tuple[float, float, float] | None):
             A triplet of numbers representing the lower bound, upper bound, and step size for logarithmic age.
             Either `logage` or `age_yr` must be provided, but not both.
-        MH (Tuple[float, float, float] | None): 
+        MH (Tuple[float, float, float] | None):
             A triplet of numbers representing the lower bound, upper bound, and step size for metallicity [M/H].
             Either `MH` or `Z` must be provided, but not both.
         default_ranges (bool, optional):

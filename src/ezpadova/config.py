@@ -9,8 +9,16 @@ from typing import Tuple
 import requests
 import json
 from bs4 import BeautifulSoup
+from bs4.element import ResultSet
 
 from .tools import dedent
+
+# Disable SSL warnings when certificate verification is disabled
+try:
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+except ImportError:
+    pass
 
 
 # URL of the webpage
@@ -95,7 +103,7 @@ def reload_configuration():
         f.write(generate_doc())
 
 
-def _get_siblings_text(element: BeautifulSoup) -> str:
+def _get_siblings_text(element: BeautifulSoup  | ResultSet ) -> str:
     """
     Extracts and concatenates the text content from the sibling elements of the given BeautifulSoup element
     until another form element is encountered.
@@ -111,16 +119,16 @@ def _get_siblings_text(element: BeautifulSoup) -> str:
         A single string containing the concatenated text content of the sibling elements.
     """
     elements_ = []
-    for sibling in element.next_siblings:
-        if sibling.text or sibling.name == "br":
-            elements_.append(sibling.text)
+    for sibling in element.next_siblings: # type: ignore
+        if sibling.text or sibling.name == "br":  # type: ignore
+            elements_.append(sibling.text)  
         else:
             break
     return " ".join(elements_)
 
 
 def _parse_select_info(
-    forms: BeautifulSoup, name: str, elt_class: str, /
+    forms: BeautifulSoup | ResultSet, name: str, elt_class: str, /
 ) -> Tuple[dict, dict]:
     """
     Parses the provided BeautifulSoup forms to extract information about select elements.
@@ -144,7 +152,7 @@ def _parse_select_info(
     comps = {}
     selected = None
     for form in forms:
-        elements = form.find_all(elt_class)
+        elements = form.find_all(elt_class)  # type: ignore
         for element in elements:
             if element["name"] == name:
                 options = element.find_all("option")
@@ -158,7 +166,7 @@ def _parse_select_info(
 
 
 def _parse_radio_info(
-    forms: BeautifulSoup, name: str, elt_class: str, elt_type: str
+    forms: BeautifulSoup | ResultSet, name: str, elt_class: str, elt_type: str
 ) -> Tuple[dict, dict]:
     """
     Parses radio button information from HTML forms.
@@ -185,7 +193,7 @@ def _parse_radio_info(
     comps = {}
     selected = None
     for form in forms:
-        elements = form.find_all(elt_class, type=elt_type)
+        elements = form.find_all(elt_class, type=elt_type)   # type: ignore
         for element in elements:
             if element["name"] == name:
                 text = _get_siblings_text(element)
@@ -196,7 +204,7 @@ def _parse_radio_info(
 
 
 def _parse_text_info(
-    forms: BeautifulSoup, name: str, elt_class: str, elt_type: str
+    forms: BeautifulSoup | ResultSet, name: str, elt_class: str, elt_type: str
 ) -> Tuple[dict, dict]:
     """
     Parses text information from HTML forms.
@@ -223,7 +231,7 @@ def _parse_text_info(
     comps = {}
     defaults = {}
     for form in forms:
-        elements = form.find_all(elt_class, type=elt_type)
+        elements = form.find_all(elt_class, type=elt_type)  # type: ignore
         for element in elements:
             if element["name"] == name:
                 text = _get_siblings_text(element)
@@ -232,7 +240,7 @@ def _parse_text_info(
     return comps, defaults
 
 
-def _get_photsys_info(forms: BeautifulSoup) -> Tuple[dict, dict]:
+def _get_photsys_info(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     """
     Retrieve photometric systems and their default values from the form.
 
@@ -276,7 +284,7 @@ def _get_photsys_info(forms: BeautifulSoup) -> Tuple[dict, dict]:
     return comps, defaults_
 
 
-def _get_model_info(forms: BeautifulSoup) -> Tuple[dict, dict]:
+def _get_model_info(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     """
     Retrieve model systems from the form.
 
@@ -312,7 +320,7 @@ def _get_model_info(forms: BeautifulSoup) -> Tuple[dict, dict]:
     return comps, defaults
 
 
-def _get_mdust(forms: BeautifulSoup) -> Tuple[dict, dict]:
+def _get_mdust(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     """
     Retrieve dust information for M stars.
 
@@ -337,7 +345,7 @@ def _get_mdust(forms: BeautifulSoup) -> Tuple[dict, dict]:
     return comps["dust_sourceM"], defaults
 
 
-def _get_cdust(forms: BeautifulSoup) -> Tuple[dict, dict]:
+def _get_cdust(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     """
     Retrieve dust information for C stars.
 
@@ -361,7 +369,7 @@ def _get_cdust(forms: BeautifulSoup) -> Tuple[dict, dict]:
     return comps["dust_sourceC"], defaults
 
 
-def _get_extinction(forms: BeautifulSoup) -> Tuple[dict, dict]:
+def _get_extinction(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     """
     Extracts extinction information from the provided BeautifulSoup form.
 
@@ -391,7 +399,7 @@ def _get_extinction(forms: BeautifulSoup) -> Tuple[dict, dict]:
     return comps, defaults
 
 
-def _get_imf(forms: BeautifulSoup) -> Tuple[dict, dict]:
+def _get_imf(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     """
     Extracts and cleans IMF (Initial Mass Function) information from the provided BeautifulSoup form data.
 
@@ -419,7 +427,7 @@ def _get_imf(forms: BeautifulSoup) -> Tuple[dict, dict]:
     return cleaned, defaults_
 
 
-def _get_age(forms: BeautifulSoup) -> Tuple[dict, dict]:
+def _get_age(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     """
     Extracts age-related information from a BeautifulSoup form.
 
@@ -457,7 +465,7 @@ def _get_age(forms: BeautifulSoup) -> Tuple[dict, dict]:
     return comps, defaults
 
 
-def _get_met(forms: BeautifulSoup) -> Tuple[dict, dict]:
+def _get_met(forms: BeautifulSoup | ResultSet) -> Tuple[dict, dict]:
     """
     Extracts and parses metallicity-related information from the given BeautifulSoup form.
 
@@ -494,7 +502,7 @@ def _get_page_info():
     """Retrieve information directly from the CMD webpage and update `config`"""
 
     # Fetch the content
-    response = requests.get(configuration["url"])
+    response = requests.get(configuration["url"], verify=False)  # type: ignore
     html_content = response.text
 
     # Parse the HTML
@@ -604,7 +612,7 @@ def generate_doc() -> str:
     """
 
     track_info = "| value | description |\n| --- | --- |\n"
-    for label, value in configuration["track_parsec"]["track_parsec"]:
+    for label, value in configuration["track_parsec"]["track_parsec"]: 
         track_info += f"| {value} | {label} |\n"
 
     track_omegai = "| value | description |\n| --- | --- |\n"
