@@ -128,7 +128,7 @@ def _get_siblings_text(element: Union[BeautifulSoup, ResultSet] ) -> str:
 
 
 def _parse_select_info(
-    forms: BeautifulSoup | ResultSet, name: str, elt_class: str, /
+    forms: Union[BeautifulSoup, ResultSet], name: str, elt_class: str, /
 ) -> Tuple[dict, dict]:
     """
     Parses the provided BeautifulSoup forms to extract information about select elements.
